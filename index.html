@@ -227,8 +227,8 @@
 
         // Add AI roles
         const AI_ROLES = {
-            ARCHITECT: "AI Architect",
-            ENHANCER: "AI Enhancer"
+    ARCHITECT: "AI Architect",
+    TESTER: "AI Tester"  // Changed from ENHANCER to TESTER
 };
 
         let tokenUsage = 0;
@@ -249,140 +249,230 @@
         });
 
         async function generateCode() {
-    const generateBtn = document.getElementById("generate-btn");
+   const generateBtn = document.getElementById("generate-btn");
 
-    if (tokenUsage >= tokenLimit) {
-        updateChat("System: Token limit reached for today!");
-        return;
-    }
+   if (tokenUsage >= tokenLimit) {
+       updateChat("System: Token limit reached for today!");
+       return;
+   }
 
-    generateBtn.classList.add("loading");
-    generateBtn.disabled = true;
+   generateBtn.classList.add("loading");
+   generateBtn.disabled = true;
 
-    const selectedPrompt = document.getElementById("prompt-selector").value;
-    const baseStructure = "Important: Always provide a complete HTML document with <!DOCTYPE html>, <html>, <head> (including title), and <body> tags. Include all CSS within a <style> tag in the head section. Do not use separate CSS or code blocks - everything must be in a single, complete HTML file.";
+   const selectedPrompt = document.getElementById("prompt-selector").value;
+   const baseStructure = "Important: Always provide a complete HTML document with <!DOCTYPE html>, <html>, <head> (including title), and <body> tags. Include all CSS within a <style> tag in the head section. Do not use separate CSS or code blocks - everything must be in a single, complete HTML file.";
 
-    try {
-        let initialResponse;
-        let enhancedResponse;
+   const architectPrompt = `You are an expert frontend architect. 
+CRITICAL FORMATTING RULES:
+1. ALL CSS properties must end with semicolons
+2. ALL property values must have proper spacing (e.g., "margin: 0;")
+3. NO extra spaces in property names (e.g., "background-color" NOT "background   color")
+4. ALL HTML attributes must have proper quotes (e.g., class="example")
+5. Use 2 spaces for indentation (not 4)
+6. NO spaces before semicolons
+7. Proper spacing in math operations (e.g., "* 0.5" not "*0.5")
 
-        // First AI (Architect) generates base code
-        if (selectedPrompt === "self-improve") {
-            updateChat(`${AI_ROLES.ARCHITECT}: Analyzing and improving the existing code...`);
-            const chat1 = await model.startChat({ history: [] });
-            const result1 = await chat1.sendMessage([{
-                text: encodeURIComponent(`${baseStructure} As a frontend architect, analyze and improve this code. List improvements as bullet points: ${editor.getValue()}`)
-            }]);
-            initialResponse = await result1.response.text();
-        } else {
-            updateChat(`${AI_ROLES.ARCHITECT}: Creating initial solution...`);
-            const chat1 = await model.startChat({ history: [] });
-            const promptText = selectedPrompt === "freestyle" 
-                ? `${baseStructure} Create something creative and unique using HTML, CSS, and JavaScript.`
-                : `${baseStructure} ${document.getElementById("prompt-selector").selectedOptions[0].text}`;
-            
-            const result1 = await chat1.sendMessage([{
-                text: encodeURIComponent(promptText)
-            }]);
-            initialResponse = await result1.response.text();
-        }
-        
-        updateChat(`${AI_ROLES.ARCHITECT}: Here's my solution:\n${initialResponse.slice(0, 150)}...`);
+BEFORE WRITING CODE:
+1. First describe your planned approach in bullet points
+2. Then provide the complete code following the rules above
 
-        // Second AI (Enhancer) improves the solution
-        updateChat(`${AI_ROLES.ENHANCER}: Analyzing and enhancing the solution...`);
-        const chat2 = await model2.startChat({ history: [] });
-        const result2 = await chat2.sendMessage([{
-            text: encodeURIComponent(`
-                You are a frontend enhancer. Improve this solution while maintaining its original structure:
-                ${initialResponse}
-                
-                1. Add new features or enhance existing ones
-                2. Improve the user experience
-                3. Add thorough comments
-                4. Ensure the code follows best practices
-                5. Keep all CSS in style tags and JS in script tags
-                6. List your improvements as bullet points in HTML comments
-                7. Provide the complete enhanced code as a single HTML document
-            `)
-        }]);
-        enhancedResponse = await result2.response.text();
-        updateChat(`${AI_ROLES.ENHANCER}: Enhancement complete!`);
+CORRECT EXAMPLES:
+CSS:
+.example {
+ color: #fff;
+ background-color: #000;
+ margin: 0 auto;
+ padding: 20px;
+}
 
-        // Process and format the final code
-        let finalCode = enhancedResponse;
-        if (!finalCode.trim().toLowerCase().startsWith('<!doctype html>')) {
-            let improvements = '';
-            const bulletPoints = enhancedResponse.match(/[•\-\*].+/g);
-            if (bulletPoints) {
-                improvements = '<!--\nImprovements made:\n' + bulletPoints.join('\n') + '\n-->\n\n';
-            }
+JavaScript:
+const element = document.getElementById('example');
+element.addEventListener('click', () => {
+ const value = number * 0.5;
+ console.log(value);
+});
 
-            finalCode = `<!DOCTYPE html>
+${baseStructure}`;
+
+   const testerPrompt = `You are an expert frontend QA tester.
+YOUR ROLE:
+1. Review and validate the provided code
+2. DO NOT modify the code
+3. Test all functionality and features
+4. Verify code formatting and structure
+5. Check for potential issues or bugs
+
+TEST CASES SHOULD COVER:
+1. HTML structure and semantics
+2. CSS styling and responsiveness
+3. JavaScript functionality
+4. User interaction flows
+5. Error handling
+6. Cross-browser compatibility concerns
+
+PROVIDE YOUR RESPONSE IN THIS FORMAT:
+1. First list all features you identified
+2. Then list all test cases performed
+3. Provide validation results for each test
+4. Note any potential issues found
+5. Do NOT modify or enhance the code
+
+Example test case format:
+- Test: Button Click Event
+ ✓ Verified: Click triggers correct function
+ ✓ Verified: Visual feedback works
+ ✓ Verified: State changes as expected
+
+- Test: CSS Animations
+ ✓ Verified: Transitions are smooth
+ ✓ Verified: Timing is correct
+ ! Note: Could have performance issues on mobile
+
+Return the original code unchanged after your analysis.`;
+
+   function validateCode(code) {
+       return code
+           .replace(/\s+;/g, ';') // Remove spaces before semicolons
+           .replace(/:\s+/g, ': ') // Ensure single space after colons
+           .replace(/\s{2,}/g, ' ') // Remove multiple spaces
+           .replace(/{\s+}/g, '{}') // Fix empty blocks
+           .replace(/(\w+)\s+:/g, '$1:') // Remove spaces before colons
+           .replace(/\(\s+/g, '(') // Remove spaces after opening parentheses
+           .replace(/\s+\)/g, ')') // Remove spaces before closing parentheses
+           .replace(/\s+{/g, ' {') // Ensure single space before opening braces
+           .replace(/}\s+/g, '}\n') // Ensure newline after closing braces
+           .replace(/:\s*([^;\n{}]+?)\s*([;}])/g, ': $1$2') // Fix property value spacing
+           .replace(/([a-z-]+)\s*:\s*([^;}]+)[;}]/g, (match, prop, value) => `${prop}: ${value.trim()};`);
+   }
+
+   try {
+       let initialResponse;
+
+       // First AI (Architect) generates base code
+       if (selectedPrompt === "self-improve") {
+           updateChat(`${AI_ROLES.ARCHITECT}: Analyzing the existing code...`);
+           const chat1 = await model.startChat({ history: [] });
+           const result1 = await chat1.sendMessage([{
+               text: `${architectPrompt}
+                     Analyze this code and suggest improvements. List your analysis in bullet points before providing the improved code:
+                     ${editor.getValue()}`
+           }]);
+           const analysis = await result1.response.text();
+           
+           // Extract bullet points and add to chat
+           const bulletPoints = analysis.match(/[•\-\*].+/g);
+           if (bulletPoints) {
+               updateChat(`${AI_ROLES.ARCHITECT}: Here are my suggested improvements:\n${bulletPoints.join('\n')}`);
+           }
+           
+           initialResponse = analysis;
+       } else {
+           updateChat(`${AI_ROLES.ARCHITECT}: Creating initial solution...`);
+           const chat1 = await model.startChat({ history: [] });
+           const promptText = selectedPrompt === "freestyle" 
+               ? `${architectPrompt} Create something creative and unique using HTML, CSS, and JavaScript.`
+               : `${architectPrompt} ${document.getElementById("prompt-selector").selectedOptions[0].text}`;
+           
+           const result1 = await chat1.sendMessage([{ text: promptText }]);
+           initialResponse = await result1.response.text();
+           
+           // Extract and display Architect's plan
+           const architectFeatures = initialResponse.split('\n')
+               .filter(line => line.trim().startsWith('*') || line.trim().startsWith('-') || line.trim().startsWith('•'))
+               .map(line => line.trim());
+           if (architectFeatures.length > 0) {
+               updateChat(`${AI_ROLES.ARCHITECT}: Here's my planned approach:\n${architectFeatures.join('\n')}`);
+           } else {
+               // Try to extract comments if no bullet points found
+               const comments = initialResponse.match(/\/\*[\s\S]*?\*\/|\/\/.+/g);
+               if (comments) {
+                   updateChat(`${AI_ROLES.ARCHITECT}: Here's my planned approach:\n${comments.join('\n')}`);
+               }
+           }
+       }
+
+       // Second AI (Tester) validates the solution
+       updateChat(`${AI_ROLES.TESTER}: Beginning code validation and testing...`);
+       const chat2 = await model2.startChat({ history: [] });
+       const result2 = await chat2.sendMessage([{
+           text: `${testerPrompt}
+                 Test this code thoroughly and provide your analysis:
+                 ${initialResponse}`
+       }]);
+       const testResponse = await result2.response.text();
+
+       // Extract test results for chat
+       const testResults = testResponse.match(/[•✓!][\s\S]+?(?=\n[•✓!]|\n\n|$)/g);
+       if (testResults) {
+           updateChat(`${AI_ROLES.TESTER}: Test Results:\n${testResults.join('\n')}`);
+       }
+
+       // Use the original code since tester doesn't modify it
+       let finalCode = validateCode(initialResponse);
+
+       // Extract just the HTML code if it's mixed with comments
+       const htmlMatch = finalCode.match(/<(!DOCTYPE|html)[\s\S]+<\/html>/i);
+       if (htmlMatch) {
+           finalCode = validateCode(htmlMatch[0]);
+       }
+       
+       if (!finalCode.trim().toLowerCase().startsWith('<!doctype html>')) {
+           finalCode = `<!DOCTYPE html>
 <html>
 <head>
-    <title>Enhanced Code</title>
-    ${improvements}
-    <style>
-        /* Base styles */
-        body {
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-    </style>
+ <title>Generated Code</title>
+ <style>
+   body {
+     margin: 0;
+     padding: 20px;
+     min-height: 100vh;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+   }
+ </style>
 </head>
 <body>
-${enhancedResponse}
+${finalCode}
 </body>
 </html>`;
-        } else if (selectedPrompt === "self-improve") {
-            const bulletPoints = enhancedResponse.match(/[•\-\*].+/g);
-            if (bulletPoints) {
-                const improvements = '<!--\nImprovements made:\n' + bulletPoints.join('\n') + '\n-->\n\n';
-                finalCode = finalCode.replace('<!DOCTYPE html>', '<!DOCTYPE html>\n' + improvements);
-            }
-        }
+       }
 
-        editor.setValue(finalCode);
-        updateChat("System: Code generation and enhancement complete! Run it to see the results.");
-        tokenUsage += 400; // Increased for both AIs
-        document.getElementById("token-count").innerText = tokenUsage;
+       editor.setValue(validateCode(finalCode));
+       updateChat("System: Code generation and testing complete! Run it to see the results.");
+       tokenUsage += 400;
+       document.getElementById("token-count").innerText = tokenUsage;
 
-    } catch (error) {
-        console.error("Error in AI collaboration:", error);
-        updateChat("System: An error occurred during code generation.");
+   } catch (error) {
+       console.error("Error in AI collaboration:", error);
+       updateChat("System: An error occurred during code generation.");
+   } finally {
+       generateBtn.classList.remove("loading");
+       generateBtn.disabled = false;
+   }
+}
+async function runCode() {
+    const runBtn = document.getElementById("run-btn");
+    
+    // Add loading state
+    runBtn.classList.add("loading");
+    runBtn.disabled = true;
+    
+    try {
+        const code = editor.getValue();
+        const iframe = document.getElementById("preview").contentWindow.document;
+        iframe.open();
+        iframe.write(code);
+        iframe.close();
+        
+        // Add a small delay to show the loading state
+        await new Promise(resolve => setTimeout(resolve, 500));
     } finally {
-        generateBtn.classList.remove("loading");
-        generateBtn.disabled = false;
+        // Remove loading state
+        runBtn.classList.remove("loading");
+        runBtn.disabled = false;
     }
 }
-        async function runCode() {
-            const runBtn = document.getElementById("run-btn");
-
-            // Add loading state
-            runBtn.classList.add("loading");
-            runBtn.disabled = true;
-
-            try {
-                const code = editor.getValue();
-                const iframe =
-                    document.getElementById("preview").contentWindow.document;
-                iframe.open();
-                iframe.write(code);
-                iframe.close();
-
-                // Add a small delay to show the loading state
-                await new Promise((resolve) => setTimeout(resolve, 500));
-            } finally {
-                // Remove loading state
-                runBtn.classList.remove("loading");
-                runBtn.disabled = false;
-            }
-        }
         async function clearEditor() {
             const clearBtn = document.getElementById("clear-btn");
 
@@ -414,7 +504,9 @@ ${enhancedResponse}
         messageElement.className += ' bg-gray-50';
     }
     
-    messageElement.textContent = message;
+    // Format bullet points with proper spacing
+    message = message.replace(/\n/g, '<br>');
+    messageElement.innerHTML = message;
     chatDiv.appendChild(messageElement);
     chatDiv.scrollTop = chatDiv.scrollHeight;
 }
