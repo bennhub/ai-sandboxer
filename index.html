@@ -263,14 +263,28 @@
    const baseStructure = "Important: Always provide a complete HTML document with <!DOCTYPE html>, <html>, <head> (including title), and <body> tags. Include all CSS within a <style> tag in the head section. Do not use separate CSS or code blocks - everything must be in a single, complete HTML file.";
 
    const architectPrompt = `You are an expert frontend architect. 
-CRITICAL FORMATTING RULES:
+CRITICAL HTML RULES:
+1. ALL interactive elements MUST have unique IDs
+2. ALL elements referenced in JavaScript MUST have IDs
+3. ALWAYS use semantic HTML elements (header, nav, main, footer)
+4. ALL images MUST have alt attributes
+5. ALWAYS add aria-labels for accessibility
+
+CRITICAL CSS RULES:
 1. ALL CSS properties must end with semicolons
 2. ALL property values must have proper spacing (e.g., "margin: 0;")
 3. NO extra spaces in property names (e.g., "background-color" NOT "background   color")
-4. ALL HTML attributes must have proper quotes (e.g., class="example")
-5. Use 2 spaces for indentation (not 4)
-6. NO spaces before semicolons
-7. Proper spacing in math operations (e.g., "* 0.5" not "*0.5")
+4. Use 2 spaces for indentation
+5. Add transitions for interactive elements
+6. Include hover states for clickable elements
+
+CRITICAL JAVASCRIPT RULES:
+1. ALWAYS wrap JavaScript code in an IIFE to prevent global scope pollution
+2. ALWAYS check if elements exist before adding event listeners
+3. Use const/let instead of var
+4. Add error handling for DOM operations
+5. Use proper event delegation when needed
+6. Include console warnings for potential issues
 
 BEFORE WRITING CODE:
 1. First describe your planned approach in bullet points
@@ -286,11 +300,21 @@ CSS:
 }
 
 JavaScript:
-const element = document.getElementById('example');
-element.addEventListener('click', () => {
- const value = number * 0.5;
- console.log(value);
-});
+ (function() {
+      const button = document.getElementById('myButton');
+      if (!button) {
+        console.warn('Button element not found');
+        return;
+      }
+      
+      button.addEventListener('click', () => {
+        try {
+          // Your code here
+        } catch (error) {
+          console.error('Error:', error);
+        }
+      });
+    })();
 
 ${baseStructure}`;
 
@@ -302,33 +326,50 @@ YOUR ROLE:
 4. Verify code formatting and structure
 5. Check for potential issues or bugs
 
-TEST CASES SHOULD COVER:
-1. HTML structure and semantics
-2. CSS styling and responsiveness
-3. JavaScript functionality
-4. User interaction flows
-5. Error handling
-6. Cross-browser compatibility concerns
+PRE-EXECUTION CHECKS:
+1. Verify all JavaScript-referenced elements have IDs
+2. Confirm all interactive elements have proper attributes
+3. Check for proper IIFE usage in scripts
+4. Verify error handling presence
+5. Check for proper event listener implementations
+
+TEST CASES MUST COVER:
+1. HTML Structure:
+   • All required IDs present
+   • Semantic HTML usage
+   • Accessibility attributes
+   • Proper nesting
+
+2. CSS Validation:
+   • All properties properly formatted
+   • Transitions defined
+   • Hover states present
+   • Responsive design
+
+3. JavaScript Validation:
+   • IIFE implementation
+   • Error handling
+   • Event listener checks
+   • Console warnings
+
+4. Interaction Testing:
+   • Click events
+   • Hover states
+   • Transitions
+   • Error scenarios
 
 PROVIDE YOUR RESPONSE IN THIS FORMAT:
-1. First list all features you identified
-2. Then list all test cases performed
-3. Provide validation results for each test
-4. Note any potential issues found
-5. Do NOT modify or enhance the code
+- Structure Validation:
+  ✓ Required IDs: All present
+  ✓ Semantic HTML: Properly used
+  ! Warning: Missing aria-label on button
 
-Example test case format:
-- Test: Button Click Event
- ✓ Verified: Click triggers correct function
- ✓ Verified: Visual feedback works
- ✓ Verified: State changes as expected
+- Functionality Testing:
+  ✓ Click events: Working
+  ✓ Transitions: Smooth
+  ! Note: Consider adding loading states
 
-- Test: CSS Animations
- ✓ Verified: Transitions are smooth
- ✓ Verified: Timing is correct
- ! Note: Could have performance issues on mobile
-
-Return the original code unchanged after your analysis.`;
+Return a detailed report of all tests performed.`;
 
    function validateCode(code) {
        return code
