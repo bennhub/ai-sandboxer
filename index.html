@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>AI Coding Sandbox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai",
+          "monaco-editor": "https://esm.run/monaco-editor"
+        }
+      }
+    </script>
+
+    <style>
+        .button-base {
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .button-base:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .button-base:active {
+            transform: translateY(0px) scale(0.98);
+        }
+
+        .button-base:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: spin 1s linear infinite;
+        }
+
+        .button-base.loading .spinner {
+            display: inline-block;
+        }
+
+        /* Editor and Preview Styles */
+        #editor {
+            min-height: 400px;
+            height: calc(50vh - 2rem);
+            max-height: 800px;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        #preview {
+            min-height: 400px;
+            height: calc(50vh - 2rem);
+            max-height: 800px;
+            border-radius: 0.5rem;
+            border: 2px solid #e5e7eb;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+
+        @media (min-width: 1024px) {
+
+            #editor,
+            #preview {
+                height: calc(60vh - 2rem);
+                max-height: 1000px;
+            }
+        }
+
+        @media (max-width: 640px) {
+
+            #editor,
+            #preview {
+                min-height: 300px;
+                height: calc(40vh - 1rem);
+            }
+
+            .monaco-editor {
+                min-height: 300px !important;
+            }
+
+            .monaco-editor .overflow-guard {
+                width: 100% !important;
+            }
+
+            .container {
+                padding-left: 8px;
+                padding-right: 8px;
+            }
+        }
+    </style>
+</head>
+<!-- HTML -->
+<body class="bg-gray-100 p-3 md:p-6">
+    <div class="container mx-auto px-4 max-w-full md:max-w-7xl">
+        <h1 class="text-2xl font-bold mb-4">AI Coding Sandbox</h1>
+
+        <!-- AI Chat Output -->
+      
+        <div id="ai-chat" class="bg-white p-3 md:p-4 rounded-lg shadow mb-3 md:mb-4 h-48 md:h-56 overflow-y-auto">
+            <p class="text-gray-600">System: AI collaboration ready to begin...</p>
+        </div>
+
+        <!-- Prompt Selector -->
+        <select id="prompt-selector" class="w-full mb-3 md:mb-4 p-2 rounded border">
+            <optgroup label="HTML/CSS">
+                <option value="hover">
+                    Create a button with a cool hover effect
+                </option>
+                <option value="loading">
+                    Generate a smooth loading animation using CSS
+                </option>
+                <option value="glitch">
+                    Make a text effect that looks like it's glitching
+                </option>
+                <option value="neon">Design a glowing neon text effect</option>
+                <option value="kinetic-typography">
+                    Kinetic Typography: Animate text dynamically using CSS
+                </option>
+                <option value="interactive-svg">Interactive SVG Illustrations</option>
+                <option value="responsive-grids">Responsive Text Grids</option>
+                <option value="color-palettes">Customizable Color Palettes</option>
+            </optgroup>
+
+            <optgroup label="JavaScript">
+                <option value="bounce">Create a bouncing ball animation</option>
+                <option value="procedural-art">Procedural Art Generator</option>
+                <option value="audio-visualizer">Interactive Audio Visualizer</option>
+                <option value="particle-system">Canvas-based Particle Systems</option>
+                <option value="webgl-scene">WebGL-powered 3D Scene</option>
+                <option value="chatbot">Interactive Chatbot</option>
+            </optgroup>
+
+            <optgroup label="HTML/CSS/JavaScript">
+                <option value="parallax">Parallax Scrolling Effect</option>
+                <option value="data-visualization">
+                    Interactive Data Visualizations
+                </option>
+                <option value="stop-motion">Animated Stop-Motion Stories</option>
+                <option value="navigation-experience">
+                    Personalized Navigation Experiences
+                </option>
+                <option value="quizzes-puzzles">Gamified Quizzes and Puzzles</option>
+                <option value="whiteboard">Collaborative Whiteboard</option>
+                <option value="audio-player">Create a cool audio player</option>
+            </optgroup>
+
+            <optgroup label="Other">
+                <option value="self-improve">
+                    Analyze and improve the last code snippet you generated
+                </option>
+                <option value="freestyle">
+                    Freestyle - Generate any creative frontend code
+                </option>
+            </optgroup>
+        </select>
+
+        <!-- Code Editor -->
+        <div id="editor" class="w-full border rounded mb-3 md:mb-4"></div>
+
+        <!-- Live Preview -->
+        <iframe id="preview" class="w-full border rounded bg-white mb-3 md:mb-4"></iframe>
+
+        <!-- Controls -->
+        <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-3 md:mt-4">
+            <button id="generate-btn"
+                class="button-base bg-blue-500 text-white px-4 py-2 rounded flex items-center justify-center">
+                <span class="spinner"></span>
+                <span class="button-text">Generate Code</span>
+            </button>
+            <button id="run-btn"
+                class="button-base bg-green-500 text-white px-4 py-2 rounded flex items-center justify-center">
+                <span class="spinner"></span>
+                <span class="button-text">Run Code</span>
+            </button>
+            <button id="clear-btn"
+                class="button-base bg-gray-500 text-white px-4 py-2 rounded flex items-center justify-center">
+                <span class="spinner"></span>
+                <span class="button-text">Clear</span>
+            </button>
+        </div>
+
+        <!-- Token Tracker -->
+        <div class="mt-3 md:mt-4 text-sm text-gray-700">
+            Tokens Used: <span id="token-count">0</span> / 10000
+        </div>
+    </div>
+    <!-- JAVASCRIPT --> 
+    <script type="module">
+    import { GoogleGenerativeAI } from '@google/generative-ai';
+    import * as monaco from 'monaco-editor';
+
+    // First AI
+    const genAI = new GoogleGenerativeAI("REMOVED_GEMINI_KEY");
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+    // Second AI
+    const genAI2 = new GoogleGenerativeAI("REMOVED_GEMINI_KEY");
+    const model2 = genAI2.getGenerativeModel({ model: "gemini-pro" });
+
+        // Add AI roles
+        const AI_ROLES = {
+            ARCHITECT: "AI Architect",
+            ENHANCER: "AI Enhancer"
+};
+
+        let tokenUsage = 0;
+        const tokenLimit = 10000;
+
+        // Initialize Monaco Editor
+        const editor = monaco.editor.create(document.getElementById("editor"), {
+            value: "<!-- AI-generated code will appear here -->",
+            language: "html",
+            theme: "vs-dark",
+        });
+
+        // Handle editor resize
+        window.addEventListener("resize", () => {
+            if (editor) {
+                editor.layout();
+            }
+        });
+
+        async function generateCode() {
+    const generateBtn = document.getElementById("generate-btn");
+
+    if (tokenUsage >= tokenLimit) {
+        updateChat("System: Token limit reached for today!");
+        return;
+    }
+
+    generateBtn.classList.add("loading");
+    generateBtn.disabled = true;
+
+    const selectedPrompt = document.getElementById("prompt-selector").value;
+    const baseStructure = "Important: Always provide a complete HTML document with <!DOCTYPE html>, <html>, <head> (including title), and <body> tags. Include all CSS within a <style> tag in the head section. Do not use separate CSS or code blocks - everything must be in a single, complete HTML file.";
+
+    try {
+        let initialResponse;
+        let enhancedResponse;
+
+        // First AI (Architect) generates base code
+        if (selectedPrompt === "self-improve") {
+            updateChat(`${AI_ROLES.ARCHITECT}: Analyzing and improving the existing code...`);
+            const chat1 = await model.startChat({ history: [] });
+            const result1 = await chat1.sendMessage([{
+                text: encodeURIComponent(`${baseStructure} As a frontend architect, analyze and improve this code. List improvements as bullet points: ${editor.getValue()}`)
+            }]);
+            initialResponse = await result1.response.text();
+        } else {
+            updateChat(`${AI_ROLES.ARCHITECT}: Creating initial solution...`);
+            const chat1 = await model.startChat({ history: [] });
+            const promptText = selectedPrompt === "freestyle" 
+                ? `${baseStructure} Create something creative and unique using HTML, CSS, and JavaScript.`
+                : `${baseStructure} ${document.getElementById("prompt-selector").selectedOptions[0].text}`;
+            
+            const result1 = await chat1.sendMessage([{
+                text: encodeURIComponent(promptText)
+            }]);
+            initialResponse = await result1.response.text();
+        }
+        
+        updateChat(`${AI_ROLES.ARCHITECT}: Here's my solution:\n${initialResponse.slice(0, 150)}...`);
+
+        // Second AI (Enhancer) improves the solution
+        updateChat(`${AI_ROLES.ENHANCER}: Analyzing and enhancing the solution...`);
+        const chat2 = await model2.startChat({ history: [] });
+        const result2 = await chat2.sendMessage([{
+            text: encodeURIComponent(`
+                You are a frontend enhancer. Improve this solution while maintaining its original structure:
+                ${initialResponse}
+                
+                1. Add new features or enhance existing ones
+                2. Improve the user experience
+                3. Add thorough comments
+                4. Ensure the code follows best practices
+                5. Keep all CSS in style tags and JS in script tags
+                6. List your improvements as bullet points in HTML comments
+                7. Provide the complete enhanced code as a single HTML document
+            `)
+        }]);
+        enhancedResponse = await result2.response.text();
+        updateChat(`${AI_ROLES.ENHANCER}: Enhancement complete!`);
+
+        // Process and format the final code
+        let finalCode = enhancedResponse;
+        if (!finalCode.trim().toLowerCase().startsWith('<!doctype html>')) {
+            let improvements = '';
+            const bulletPoints = enhancedResponse.match(/[•\-\*].+/g);
+            if (bulletPoints) {
+                improvements = '<!--\nImprovements made:\n' + bulletPoints.join('\n') + '\n-->\n\n';
+            }
+
+            finalCode = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Enhanced Code</title>
+    ${improvements}
+    <style>
+        /* Base styles */
+        body {
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+${enhancedResponse}
+</body>
+</html>`;
+        } else if (selectedPrompt === "self-improve") {
+            const bulletPoints = enhancedResponse.match(/[•\-\*].+/g);
+            if (bulletPoints) {
+                const improvements = '<!--\nImprovements made:\n' + bulletPoints.join('\n') + '\n-->\n\n';
+                finalCode = finalCode.replace('<!DOCTYPE html>', '<!DOCTYPE html>\n' + improvements);
+            }
+        }
+
+        editor.setValue(finalCode);
+        updateChat("System: Code generation and enhancement complete! Run it to see the results.");
+        tokenUsage += 400; // Increased for both AIs
+        document.getElementById("token-count").innerText = tokenUsage;
+
+    } catch (error) {
+        console.error("Error in AI collaboration:", error);
+        updateChat("System: An error occurred during code generation.");
+    } finally {
+        generateBtn.classList.remove("loading");
+        generateBtn.disabled = false;
+    }
+}
+        async function runCode() {
+            const runBtn = document.getElementById("run-btn");
+
+            // Add loading state
+            runBtn.classList.add("loading");
+            runBtn.disabled = true;
+
+            try {
+                const code = editor.getValue();
+                const iframe =
+                    document.getElementById("preview").contentWindow.document;
+                iframe.open();
+                iframe.write(code);
+                iframe.close();
+
+                // Add a small delay to show the loading state
+                await new Promise((resolve) => setTimeout(resolve, 500));
+            } finally {
+                // Remove loading state
+                runBtn.classList.remove("loading");
+                runBtn.disabled = false;
+            }
+        }
+        async function clearEditor() {
+            const clearBtn = document.getElementById("clear-btn");
+
+            clearBtn.classList.add("loading");
+            clearBtn.disabled = true;
+
+            editor.setValue("");
+            document.getElementById("preview").contentWindow.document.open();
+            document.getElementById("preview").contentWindow.document.write("");
+            document.getElementById("preview").contentWindow.document.close();
+
+            setTimeout(() => {
+                clearBtn.classList.remove("loading");
+                clearBtn.disabled = false;
+            }, 300);
+        }
+
+        function updateChat(message) {
+    const chatDiv = document.getElementById("ai-chat");
+    const messageElement = document.createElement('div');
+    messageElement.className = 'mb-2 p-2 rounded';
+    
+    // Style based on who's speaking
+    if (message.includes(AI_ROLES.ARCHITECT)) {
+        messageElement.className += ' bg-blue-50';
+    } else if (message.includes(AI_ROLES.ENHANCER)) {
+        messageElement.className += ' bg-green-50';
+    } else {
+        messageElement.className += ' bg-gray-50';
+    }
+    
+    messageElement.textContent = message;
+    chatDiv.appendChild(messageElement);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+}
+
+        document
+            .getElementById("generate-btn")
+            .addEventListener("click", generateCode);
+        document.getElementById("run-btn").addEventListener("click", runCode);
+        document
+            .getElementById("clear-btn")
+            .addEventListener("click", clearEditor);
+    </script>
+</body>
+
+</html>
