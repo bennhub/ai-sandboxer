@@ -479,19 +479,98 @@ ${finalCode}
 </html>`;
        }
 
-       editor.setValue(validateCode(finalCode));
-       updateChat("System: Code generation and testing complete! Run it to see the results.");
-       tokenUsage += 400;
-       document.getElementById("token-count").innerText = tokenUsage;
+       // Add debug checks before setting the code
+const debugIssues = debugCode(finalCode);
 
-   } catch (error) {
-       console.error("Error in AI collaboration:", error);
-       updateChat("System: An error occurred during code generation.");
-   } finally {
-       generateBtn.classList.remove("loading");
-       generateBtn.disabled = false;
-   }
+if (debugIssues.length > 0) {
+    updateChat('🔍 Debug Results:');
+    debugIssues.forEach(issue => {
+        const icon = issue.type === 'error' ? '❌' : issue.type === 'warning' ? '⚠️' : 'ℹ️';
+        updateChat(`${icon} ${issue.type.toUpperCase()}: ${issue.message}\n   💡 Suggestion: ${issue.suggestion}`);
+    });
 }
+
+if (debugIssues.some(issue => issue.type === 'error')) {
+    updateChat("System: ⚠️ Critical issues found in generated code. Please review debug results.");
+} else if (debugIssues.length > 0) {
+    updateChat("System: Code generated with some suggestions for improvement.");
+} else {
+    updateChat("System: Code passes all debug checks! ✅");
+}
+
+editor.setValue(validateCode(finalCode));
+updateChat("System: Code generation and testing complete! Run it to see the results.");
+tokenUsage += 400;
+document.getElementById("token-count").innerText = tokenUsage;
+
+} catch (error) {
+    console.error("Error in AI collaboration:", error);
+    updateChat("System: An error occurred during code generation.");
+} finally {
+    generateBtn.classList.remove("loading");
+    generateBtn.disabled = false;
+}
+}
+
+function debugCode(code) {
+    const issues = [];
+    
+    // Check for HTML issues
+    if (code.includes('getElementById') && !code.includes('id="')) {
+        issues.push({
+            type: 'error',
+            message: 'JavaScript references ID but no matching ID attribute found',
+            suggestion: 'Add missing ID attributes to elements referenced in JavaScript'
+        });
+    }
+
+    // Check for JavaScript issues
+    if (!code.includes('(function()') && code.includes('<script>')) {
+        issues.push({
+            type: 'warning',
+            message: 'JavaScript not wrapped in IIFE',
+            suggestion: 'Wrap JavaScript code in (function() { ... })(); to prevent scope issues'
+        });
+    }
+
+    if (code.includes('addEventListener') && !code.includes('try {')) {
+        issues.push({
+            type: 'warning',
+            message: 'Missing error handling in event listeners',
+            suggestion: 'Add try-catch blocks around event listener code'
+        });
+    }
+
+    // Check for CSS issues
+    if (code.includes('style') && code.includes('{') && !code.includes('transition')) {
+        issues.push({
+            type: 'info',
+            message: 'Interactive elements missing transitions',
+            suggestion: 'Add CSS transitions for smoother interactions'
+        });
+    }
+
+    // Check for accessibility
+    if (code.includes('<button') && !code.includes('aria-label')) {
+        issues.push({
+            type: 'warning',
+            message: 'Button missing accessibility attributes',
+            suggestion: 'Add aria-label to buttons for screen readers'
+        });
+    }
+
+    // Check for semantic HTML
+    if (!code.includes('<header') && !code.includes('<main') && !code.includes('<footer')) {
+        issues.push({
+            type: 'info',
+            message: 'Missing semantic HTML elements',
+            suggestion: 'Use semantic elements like <header>, <main>, and <footer>'
+        });
+    }
+
+    return issues;
+}
+
 async function runCode() {
     const runBtn = document.getElementById("run-btn");
     
@@ -539,14 +618,21 @@ async function runCode() {
     // Style based on who's speaking
     if (message.includes(AI_ROLES.ARCHITECT)) {
         messageElement.className += ' bg-blue-50';
-    } else if (message.includes(AI_ROLES.ENHANCER)) {
+    } else if (message.includes(AI_ROLES.TESTER)) {
         messageElement.className += ' bg-green-50';
+    } else if (message.includes('❌')) {  // Error messages
+        messageElement.className += ' bg-red-50';
+    } else if (message.includes('⚠️')) {  // Warning messages
+        messageElement.className += ' bg-yellow-50';
+    } else if (message.includes('ℹ️')) {  // Info messages
+        messageElement.className += ' bg-gray-50';
     } else {
         messageElement.className += ' bg-gray-50';
     }
     
-    // Format bullet points with proper spacing
+    // Format bullet points and debug messages with proper spacing
     message = message.replace(/\n/g, '<br>');
+    message = message.replace(/💡 Suggestion:/g, '<br>💡 Suggestion:');
     messageElement.innerHTML = message;
     chatDiv.appendChild(messageElement);
     chatDiv.scrollTop = chatDiv.scrollHeight;
