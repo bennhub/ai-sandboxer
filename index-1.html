@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Particle System</title>
+    <style>
+        body {
+            background: #000;
+        }
+
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+
+</head>
+
+<body>
+    <main> <canvas id="particle-canvas"></canvas> </main>
+    <footer> <button id="reset-button">Reset</button> </footer>
+    <script> (function () { const canvas = document.getElementById('particle-canvas'); const resetButton = document.getElementById('reset-button'); if (!canvas || !resetButton) { console.warn('Missing required elements'); return; }
+
+            class Particle { constructor(x, y, radius, color) { this.x = x; this.y = y; this.radius = radius; this.color = color; this.speedX = Math.random() * 5 - 2.5; this.speedY = Math.random() * 5 - 2.5; }
+
+            draw() { ctx.beginPath(); ctx.fillStyle = this.color; ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); }
+
+            update() {
+                this.x += this.speedX; this.y += this.speedY; if (this.x < 0 || this.x > canvas.width) { this.speedX = -this.speedX; }
+
+                if (this.y < 0 || this.y > canvas.height) { this.speedY = -this.speedY; }
+
+            }
+
+        }
+
+ const ctx = canvas.getContext('2d'); canvas.width = window.innerWidth; canvas.height = window.innerHeight; // Array of particles const particles = []; // Create particles for (let i = 0; i < 100; i++) { const x = Math.random() * canvas.width; const y = Math.random() * canvas.height; const radius = Math.random() * 3 + 1; const color = `hsl(${Math.random() * 360}, 100%, 50%)`; const particle = new Particle(x, y, radius, color); particles.push(particle); }
+
+ function draw() { ctx.clearRect(0, 0, canvas.width, canvas.height); particles.forEach(particle => particle.draw()); particles.forEach(particle => particle.update()); requestAnimationFrame(draw); }
+
+ resetButton.addEventListener('click', () => { particles.length = 0; for (let i = 0; i < 100; i++) { const x = Math.random() * canvas.width; const y = Math.random() * canvas.height; const radius = Math.random() * 3 + 1; const color = `hsl(${Math.random() * 360}, 100%, 50%)`; const particle = new Particle(x, y, radius, color); particles.push(particle); }
+
+});  draw(); })(); </script>
+
+</body>
+
+</html>

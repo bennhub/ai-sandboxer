@@ -1,46 +1,132 @@
-<!-- Glowing text effect-->
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Glowing Neon Text Effect</title>
+  <title>Particle System</title>
   <style>
     body {
-      background-color: #000;
+      background: #000;
+      margin: 0; /* Remove default body margin to prevent scrollbars */
+      overflow: hidden; /* Prevent scrollbars when canvas is larger than viewport */
     }
-
-    .neon-text {
-      font-family: 'Arial', sans-serif;
-      font-size: 50px;
-      color: #fff;
-      text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000, 0 0 40px #ff0000, 0 0 50px #ff0000, 0 0 60px #ff0000, 0 0 70px #ff0000;
+    #particle-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%; /* Use 100% instead of 100vw to avoid potential issues */
+      height: 100%; /* Use 100% instead of 100vh to avoid potential issues */
+      display: block; /* Prevents a small gap below the canvas */
+    }
+    footer {
+      position: absolute; /* Position the footer */
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%); /* Center the button */
+    }
+    #reset-button {
+      padding: 10px 20px;
+      background-color: #333; /* Darker background */
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div class="neon-text">
-    Glowing Neon Text
-  </div>
+  <main>
+    <canvas id="particle-canvas"></canvas>
+  </main>
+  <footer>
+    <button id="reset-button">Reset</button>
+  </footer>
+  <script>
+    (() => {
+      const canvas = document.getElementById('particle-canvas');
+      const resetButton = document.getElementById('reset-button');
 
- 
-<button id="cool-button">Hover Me!</button>
+      if (!canvas || !resetButton) {
+        console.warn('Missing required elements');
+        return;
+      }
+
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Reposition particles to fit the new canvas size
+        particles.forEach(particle => {
+          particle.x = Math.random() * canvas.width;  // Or keep relative position
+          particle.y = Math.random() * canvas.height; // Or keep relative position
+        });
+      }
+
+      class Particle {
+        constructor(x, y, radius, color) {
+          this.x = x;
+          this.y = y;
+          this.radius = radius;
+          this.color = color;
+          this.speedX = Math.random() * 5 - 2.5;
+          this.speedY = Math.random() * 5 - 2.5;
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.fillStyle = this.color;
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+
+          if (this.x < 0 || this.x > canvas.width) {
+            this.speedX = -this.speedX;
+          }
+          if (this.y < 0 || this.y > canvas.height) {
+            this.speedY = -this.speedY;
+          }
+        }
+      }
+
+      function createParticles(numParticles = 100) {
+        particles = []; // Clear existing particles
+        for (let i = 0; i < numParticles; i++) {
+          const x = Math.random() * canvas.width;
+          const y = Math.random() * canvas.height;
+          const radius = Math.random() * 3 + 1;
+          const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+          const particle = new Particle(x, y, radius, color);
+          particles.push(particle);
+        }
+      }
 
 
-<style>
-#cool-button {
-  border: none;
-  background-color: #000;
-  color: #fff;
-  padding: 10px 20px;
-  text-transform: uppercase;
-  transition: all 0.3s ease-in-out;
-}
 
-#cool-button:hover {
-  background-color: #fff;
-  color: #000;
-  border: 1px solid #000;
-}
-</style>
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(particle => particle.draw());
+        particles.forEach(particle => particle.update());
+        requestAnimationFrame(draw);
+      }
 
+      // Initial setup
+      resizeCanvas();
+      createParticles();
+      draw();
+
+
+      // Event listeners
+      window.addEventListener('resize', resizeCanvas); // Key improvement: handle resize
+      resetButton.addEventListener('click', () => {
+          createParticles();
+      });
+
+    })();
+  </script>
 </body>
 </html>

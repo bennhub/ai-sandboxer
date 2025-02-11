@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>AI Coding Sandbox</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.5/split.min.js"></script>
     <script type="importmap">
       {
         "imports": {
@@ -15,254 +18,490 @@
       }
     </script>
 
+    <!-- CSS STYLES -->
     <style>
-        .button-base {
-            transition: all 0.2s;
-            position: relative;
-            overflow: hidden;
+      /* Base Layout */
+      .layout-container {
+        height: 100vh;
+        overflow: hidden;
+        padding: 1rem;
+      }
+
+      .split-horizontal {
+        display: flex;
+        height: calc(100% - 4rem); /* Account for header */
+      }
+
+      .split-vertical {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      /* Panel Styles */
+      .panel {
+        overflow: hidden;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        margin: 0.25rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      #editor-panel,
+      #preview-panel {
+        height: 100%;
+      }
+
+      #editor {
+        width: 100%;
+        height: 100%;
+        border-radius: 0.5rem;
+      }
+
+      #preview {
+        width: 100%;
+        height: 100%;
+        border-radius: 0.5rem;
+        border: 2px solid #e5e7eb;
+        background-color: white;
+      }
+
+      #prompt-panel {
+        padding: 1rem;
+        background-color: white;
+      }
+
+      #ai-chat {
+        height: 100%;
+        overflow-y: auto;
+        background-color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+      }
+
+      /* Button Styles */
+      .button-base {
+        transition: all 0.2s;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .button-base:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .button-base:active {
+        transform: translateY(0px) scale(0.98);
+      }
+
+      .button-base:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
+      /* Spinner Animation */
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .spinner {
+        display: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #ffffff;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        margin-right: 8px;
+        animation: spin 1s linear infinite;
+      }
+
+      .button-base.loading .spinner {
+        display: inline-block;
+      }
+
+      /* Gutter Styles */
+      .gutter {
+        background-color: #eee;
+        background-repeat: no-repeat;
+        background-position: 50%;
+      }
+
+      .gutter.gutter-horizontal {
+        background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==");
+        cursor: col-resize;
+        width: 8px;
+      }
+
+      .gutter.gutter-vertical {
+        background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=");
+        cursor: row-resize;
+        height: 8px;
+      }
+
+      /* Chat Message Styles */
+      .message {
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+      }
+
+      .bg-blue-50 {
+        background-color: #eff6ff;
+      }
+      .bg-green-50 {
+        background-color: #f0fdf4;
+      }
+      .bg-red-50 {
+        background-color: #fef2f2;
+      }
+      .bg-yellow-50 {
+        background-color: #fefce8;
+      }
+      .bg-gray-50 {
+        background-color: #f9fafb;
+      }
+
+      /* Responsive Styles */
+      @media (min-width: 1024px) {
+        .split-horizontal > div:first-child {
+          flex: 0 0 25%;
         }
 
-        .button-base:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        .split-horizontal > div:last-child {
+          flex: 0 0 75%;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .split-horizontal {
+          flex-direction: column;
         }
 
-        .button-base:active {
-            transform: translateY(0px) scale(0.98);
+        .gutter-horizontal {
+          display: none;
         }
 
-        .button-base:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
+        .panel {
+          min-height: 300px;
         }
 
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+        .monaco-editor {
+          min-height: 300px !important;
         }
 
-        .spinner {
-            display: none;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #ffffff;
-            border-top: 2px solid transparent;
-            border-radius: 50%;
-            margin-right: 8px;
-            animation: spin 1s linear infinite;
+        .monaco-editor .overflow-guard {
+          width: 100% !important;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .layout-container {
+          padding: 0.5rem;
         }
 
-        .button-base.loading .spinner {
-            display: inline-block;
+        .panel {
+          margin: 0.125rem;
         }
-
-        /* Editor and Preview Styles */
-        #editor {
-            min-height: 400px;
-            height: calc(50vh - 2rem);
-            max-height: 800px;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-                0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            margin-bottom: 1.5rem;
-            transition: all 0.3s ease;
-        }
-
-        #preview {
-            min-height: 400px;
-            height: calc(50vh - 2rem);
-            max-height: 800px;
-            border-radius: 0.5rem;
-            border: 2px solid #e5e7eb;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-                0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            background-color: white;
-            transition: all 0.3s ease;
-        }
-
-        @media (min-width: 1024px) {
-
-            #editor,
-            #preview {
-                height: calc(60vh - 2rem);
-                max-height: 1000px;
-            }
-        }
-
-        @media (max-width: 640px) {
-
-            #editor,
-            #preview {
-                min-height: 300px;
-                height: calc(40vh - 1rem);
-            }
-
-            .monaco-editor {
-                min-height: 300px !important;
-            }
-
-            .monaco-editor .overflow-guard {
-                width: 100% !important;
-            }
-
-            .container {
-                padding-left: 8px;
-                padding-right: 8px;
-            }
-        }
+      }
     </style>
-</head>
-<!-- HTML -->
-<body class="bg-gray-100 p-3 md:p-6">
-    <div class="container mx-auto px-4 max-w-full md:max-w-7xl">
-        <h1 class="text-2xl font-bold mb-4">AI Coding Sandbox</h1>
 
-        <!-- AI Chat Output -->
-      
-        <div id="ai-chat" class="bg-white p-3 md:p-4 rounded-lg shadow mb-3 md:mb-4 h-48 md:h-56 overflow-y-auto">
-            <p class="text-gray-600">System: AI collaboration ready to begin...</p>
-        </div>
+    <!-- HTML -->
+  </head>
 
-        <!-- Prompt Selector -->
-        <select id="prompt-selector" class="w-full mb-3 md:mb-4 p-2 rounded border">
-            <optgroup label="HTML/CSS">
+  <body class="bg-gray-100">
+    <div class="layout-container">
+      <h1 class="text-2xl font-bold mb-4">AI Coding Sandbox</h1>
+
+      <div class="split-horizontal">
+        <!-- Left Panel Container -->
+        <div class="split-vertical" id="left-pane">
+          <!-- Top Left: Prompt Panel -->
+          <div class="panel" id="prompt-panel">
+            <!-- Future Custom Prompt Input -->
+            <div class="mb-4 hidden">
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  class="w-full p-2 border rounded"
+                  placeholder="Enter custom prompt..."
+                />
+                <button class="px-4 py-2 bg-blue-500 text-white rounded">
+                  Submit
+                </button>
+              </div>
+            </div>
+<!-- Prompt Imput -->
+<div class="mb-4">
+    <div class="flex gap-2">
+        <input 
+            type="text" 
+            id="custom-prompt" 
+            class="w-full p-2 border rounded" 
+            placeholder="Enter your custom prompt here..."
+        >
+        <button 
+            id="custom-prompt-btn" 
+            class="button-base bg-blue-500 text-white px-4 py-2 rounded flex items-center justify-center"
+        >
+            <span class="spinner"></span>
+            <span class="button-text">Submit</span>
+        </button>
+    </div>
+</div>
+            <!-- Prompt Selector -->
+            <select id="prompt-selector" class="w-full mb-3 p-2 rounded border">
+              <optgroup label="HTML/CSS">
                 <option value="hover">
-                    Create a button with a cool hover effect
+                  Create a button with a cool hover effect
                 </option>
                 <option value="loading">
-                    Generate a smooth loading animation using CSS
+                  Generate a smooth loading animation using CSS
                 </option>
                 <option value="glitch">
-                    Make a text effect that looks like it's glitching
+                  Make a text effect that looks like it's glitching
                 </option>
                 <option value="neon">Design a glowing neon text effect</option>
                 <option value="kinetic-typography">
-                    Kinetic Typography: Animate text dynamically using CSS
+                  Kinetic Typography: Animate text dynamically using CSS
                 </option>
-                <option value="interactive-svg">Interactive SVG Illustrations</option>
+                <option value="interactive-svg">
+                  Interactive SVG Illustrations
+                </option>
                 <option value="responsive-grids">Responsive Text Grids</option>
-                <option value="color-palettes">Customizable Color Palettes</option>
-            </optgroup>
+                <option value="color-palettes">
+                  Customizable Color Palettes
+                </option>
+              </optgroup>
 
-            <optgroup label="JavaScript">
+              <optgroup label="JavaScript">
                 <option value="bounce">Create a bouncing ball animation</option>
                 <option value="procedural-art">Procedural Art Generator</option>
-                <option value="audio-visualizer">Interactive Audio Visualizer</option>
-                <option value="particle-system">Canvas-based Particle Systems</option>
+                <option value="audio-visualizer">
+                  Interactive Audio Visualizer
+                </option>
+                <option value="particle-system">
+                  Canvas-based Particle Systems
+                </option>
                 <option value="webgl-scene">WebGL-powered 3D Scene</option>
                 <option value="chatbot">Interactive Chatbot</option>
-            </optgroup>
+              </optgroup>
 
-            <optgroup label="HTML/CSS/JavaScript">
+              <optgroup label="HTML/CSS/JavaScript">
                 <option value="parallax">Parallax Scrolling Effect</option>
                 <option value="data-visualization">
-                    Interactive Data Visualizations
+                  Interactive Data Visualizations
                 </option>
-                <option value="stop-motion">Animated Stop-Motion Stories</option>
+                <option value="stop-motion">
+                  Animated Stop-Motion Stories
+                </option>
                 <option value="navigation-experience">
-                    Personalized Navigation Experiences
+                  Personalized Navigation Experiences
                 </option>
-                <option value="quizzes-puzzles">Gamified Quizzes and Puzzles</option>
+                <option value="quizzes-puzzles">
+                  Gamified Quizzes and Puzzles
+                </option>
                 <option value="whiteboard">Collaborative Whiteboard</option>
                 <option value="audio-player">Create a cool audio player</option>
-            </optgroup>
+              </optgroup>
 
-            <optgroup label="Other">
+              <optgroup label="Other">
                 <option value="self-improve">
-                    Analyze and improve the last code snippet you generated
+                  Analyze and improve the last code snippet you generated
                 </option>
                 <option value="freestyle">
-                    Freestyle - Generate any creative frontend code
+                  Freestyle - Generate any creative frontend code
                 </option>
-            </optgroup>
-        </select>
+              </optgroup>
+            </select>
 
-        <!-- Code Editor -->
-        <div id="editor" class="w-full border rounded mb-3 md:mb-4"></div>
+            <!-- Token Tracker -->
+            <div class="text-sm text-gray-700 p-2">
+              Tokens Used: <span id="token-count">0</span> / 10000
+            </div>
+          </div>
 
-        <!-- Live Preview -->
-        <iframe id="preview" class="w-full border rounded bg-white mb-3 md:mb-4"></iframe>
-
-        <!-- Controls -->
-        <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-3 md:mt-4">
-            <button id="generate-btn"
-                class="button-base bg-blue-500 text-white px-4 py-2 rounded flex items-center justify-center">
-                <span class="spinner"></span>
-                <span class="button-text">Generate Code</span>
-            </button>
-            <button id="run-btn"
-                class="button-base bg-green-500 text-white px-4 py-2 rounded flex items-center justify-center">
-                <span class="spinner"></span>
-                <span class="button-text">Run Code</span>
-            </button>
-            <button id="clear-btn"
-                class="button-base bg-gray-500 text-white px-4 py-2 rounded flex items-center justify-center">
-                <span class="spinner"></span>
-                <span class="button-text">Clear</span>
-            </button>
+          <!-- Bottom Left: AI Chat Panel -->
+          <div class="panel" id="chat-panel">
+            <div
+              id="ai-chat"
+              class="h-full overflow-y-auto bg-white rounded-lg"
+            >
+              <p class="text-gray-600">
+                System: AI collaboration ready to begin...
+              </p>
+            </div>
+          </div>
         </div>
 
-        <!-- Token Tracker -->
-        <div class="mt-3 md:mt-4 text-sm text-gray-700">
-            Tokens Used: <span id="token-count">0</span> / 10000
+        <!-- Right Panel Container -->
+        <div class="split-vertical" id="right-pane">
+          <!-- Top Right: Code Editor -->
+          <div class="panel" id="editor-panel">
+            <div id="editor" class="w-full h-full"></div>
+          </div>
+
+          <!-- Bottom Right: Preview -->
+          <div class="panel" id="preview-panel">
+            <iframe id="preview" class="w-full h-full bg-white"></iframe>
+          </div>
         </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="fixed bottom-4 right-4 flex gap-2 z-10">
+        <button
+          id="generate-btn"
+          class="button-base bg-blue-500 text-white px-4 py-2 rounded flex items-center justify-center"
+        >
+          <span class="spinner"></span>
+          <span class="button-text">Generate Code</span>
+        </button>
+        <button
+          id="run-btn"
+          class="button-base bg-green-500 text-white px-4 py-2 rounded flex items-center justify-center"
+        >
+          <span class="spinner"></span>
+          <span class="button-text">Run Code</span>
+        </button>
+        <button
+          id="clear-btn"
+          class="button-base bg-gray-500 text-white px-4 py-2 rounded flex items-center justify-center"
+        >
+          <span class="spinner"></span>
+          <span class="button-text">Clear</span>
+        </button>
+      </div>
     </div>
-    <!-- JAVASCRIPT --> 
+
+    <!-- JAVASCRIPT -->
     <script type="module">
-    import { GoogleGenerativeAI } from '@google/generative-ai';
-    import * as monaco from 'monaco-editor';
+      import { GoogleGenerativeAI } from "@google/generative-ai";
+      import * as monaco from "monaco-editor";
 
-    // First AI
-    const genAI = new GoogleGenerativeAI("REMOVED_GEMINI_KEY");
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      // First AI
+      const genAI = new GoogleGenerativeAI(
+        "REMOVED_GEMINI_KEY"
+      );
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    // Second AI
-    const genAI2 = new GoogleGenerativeAI("REMOVED_GEMINI_KEY");
-    const model2 = genAI2.getGenerativeModel({ model: "gemini-pro" });
+      // Second AI
+      const genAI2 = new GoogleGenerativeAI(
+        "REMOVED_GEMINI_KEY"
+      );
+      const model2 = genAI2.getGenerativeModel({ model: "gemini-pro" });
 
-        // Add AI roles
-        const AI_ROLES = {
-    ARCHITECT: "AI Architect",
-    TESTER: "AI Tester"  // Changed from ENHANCER to TESTER
-};
+      // Add AI roles
+      const AI_ROLES = {
+        ARCHITECT: "AI Architect",
+        TESTER: "AI Tester", // Changed from ENHANCER to TESTER
+      };
 
-        let tokenUsage = 0;
-        const tokenLimit = 10000;
+      let tokenUsage = 0;
+      const tokenLimit = 10000;
 
-        // Initialize Monaco Editor
-        const editor = monaco.editor.create(document.getElementById("editor"), {
-            value: "<!-- AI-generated code will appear here -->",
-            language: "html",
-            theme: "vs-dark",
-        });
+     // Initialize Monaco Editor
+const editor = monaco.editor.create(document.getElementById("editor"), {
+    value: "<!-- AI-generated code will appear here -->",
+    language: "html",
+    theme: "vs-dark",
+});
 
-        // Handle editor resize
-        window.addEventListener("resize", () => {
-            if (editor) {
-                editor.layout();
-            }
-        });
+// Initialize Split.js for horizontal split (left and right panels)
+const horizontalSplit = Split(['#left-pane', '#right-pane'], {
+    sizes: [25, 75],
+    minSize: [200, 400],
+    gutterSize: 8,
+    direction: 'horizontal',
+    elementStyle: function (dimension, size, gutterSize) {
+        return {
+            'flex-basis': `calc(${size}% - ${gutterSize}px)`,
+        }
+    },
+    gutterStyle: function (dimension, gutterSize) {
+        return {
+            'flex-basis': `${gutterSize}px`,
+        }
+    }
+});
 
-        async function generateCode() {
-   const generateBtn = document.getElementById("generate-btn");
+// Initialize Split.js for left vertical split (prompt and chat)
+const leftVerticalSplit = Split([
+    '#prompt-panel',
+    '#chat-panel'
+], {
+    sizes: [30, 70],
+    minSize: [100, 100],
+    gutterSize: 8,
+    direction: 'vertical',
+    elementStyle: function (dimension, size, gutterSize) {
+        return {
+            'flex-basis': `calc(${size}% - ${gutterSize}px)`,
+        }
+    },
+    gutterStyle: function (dimension, gutterSize) {
+        return {
+            'flex-basis': `${gutterSize}px`,
+        }
+    }
+});
 
-   if (tokenUsage >= tokenLimit) {
-       updateChat("System: Token limit reached for today!");
-       return;
-   }
+// Initialize Split.js for right vertical split (editor and preview)
+const rightVerticalSplit = Split([
+    '#editor-panel',
+    '#preview-panel'
+], {
+    sizes: [50, 50],
+    minSize: [100, 100],
+    gutterSize: 8,
+    direction: 'vertical',
+    elementStyle: function (dimension, size, gutterSize) {
+        return {
+            'flex-basis': `calc(${size}% - ${gutterSize}px)`,
+        }
+    },
+    gutterStyle: function (dimension, gutterSize) {
+        return {
+            'flex-basis': `${gutterSize}px`,
+        }
+    }
+});
 
-   generateBtn.classList.add("loading");
-   generateBtn.disabled = true;
+// Handle editor resize
+const resizeObserver = new ResizeObserver(() => {
+    if (editor) {
+        editor.layout();
+    }
+});
 
-   const selectedPrompt = document.getElementById("prompt-selector").value;
-   const baseStructure = "Important: Always provide a complete HTML document with <!DOCTYPE html>, <html>, <head> (including title), and <body> tags. Include all CSS within a <style> tag in the head section. Do not use separate CSS or code blocks - everything must be in a single, complete HTML file.";
+resizeObserver.observe(document.getElementById('editor-panel'));
+window.addEventListener('resize', () => {
+    if (editor) {
+        editor.layout();
+    }
+});
 
-   const architectPrompt = `You are an expert frontend architect. 
+async function generateCode(customPrompt = null) {
+        const generateBtn = document.getElementById("generate-btn");
+
+        if (tokenUsage >= tokenLimit) {
+          updateChat("System: Token limit reached for today!");
+          return; 
+        }
+
+        generateBtn.classList.add("loading");
+        generateBtn.disabled = true;
+
+        const selectedPrompt = document.getElementById("prompt-selector").value;
+        const baseStructure =
+          "Important: Always provide a complete HTML document with <!DOCTYPE html>, <html>, <head> (including title), and <body> tags. Include all CSS within a <style> tag in the head section. Do not use separate CSS or code blocks - everything must be in a single, complete HTML file.";
+
+        const architectPrompt = `You are an expert frontend architect. 
 CRITICAL HTML RULES:
 1. ALL interactive elements MUST have unique IDs
 2. ALL elements referenced in JavaScript MUST have IDs
@@ -318,7 +557,7 @@ JavaScript:
 
 ${baseStructure}`;
 
-   const testerPrompt = `You are an expert frontend QA tester.
+        const testerPrompt = `You are an expert frontend QA tester.
 YOUR ROLE:
 1. Review and validate the provided code
 2. DO NOT modify the code
@@ -371,94 +610,149 @@ PROVIDE YOUR RESPONSE IN THIS FORMAT:
 
 Return a detailed report of all tests performed.`;
 
-   function validateCode(code) {
-       return code
-           .replace(/\s+;/g, ';') // Remove spaces before semicolons
-           .replace(/:\s+/g, ': ') // Ensure single space after colons
-           .replace(/\s{2,}/g, ' ') // Remove multiple spaces
-           .replace(/{\s+}/g, '{}') // Fix empty blocks
-           .replace(/(\w+)\s+:/g, '$1:') // Remove spaces before colons
-           .replace(/\(\s+/g, '(') // Remove spaces after opening parentheses
-           .replace(/\s+\)/g, ')') // Remove spaces before closing parentheses
-           .replace(/\s+{/g, ' {') // Ensure single space before opening braces
-           .replace(/}\s+/g, '}\n') // Ensure newline after closing braces
-           .replace(/:\s*([^;\n{}]+?)\s*([;}])/g, ': $1$2') // Fix property value spacing
-           .replace(/([a-z-]+)\s*:\s*([^;}]+)[;}]/g, (match, prop, value) => `${prop}: ${value.trim()};`);
-   }
+        function validateCode(code) {
+          return code
+            .replace(/\s+;/g, ";") // Remove spaces before semicolons
+            .replace(/:\s+/g, ": ") // Ensure single space after colons
+            .replace(/\s{2,}/g, " ") // Remove multiple spaces
+            .replace(/{\s+}/g, "{}") // Fix empty blocks
+            .replace(/(\w+)\s+:/g, "$1:") // Remove spaces before colons
+            .replace(/\(\s+/g, "(") // Remove spaces after opening parentheses
+            .replace(/\s+\)/g, ")") // Remove spaces before closing parentheses
+            .replace(/\s+{/g, " {") // Ensure single space before opening braces
+            .replace(/}\s+/g, "}\n") // Ensure newline after closing braces
+            .replace(/:\s*([^;\n{}]+?)\s*([;}])/g, ": $1$2") // Fix property value spacing
+            .replace(
+              /([a-z-]+)\s*:\s*([^;}]+)[;}]/g,
+              (match, prop, value) => `${prop}: ${value.trim()};`
+            );
+        }
 
-   try {
-       let initialResponse;
+        try {
+          let initialResponse;
 
-       // First AI (Architect) generates base code
-       if (selectedPrompt === "self-improve") {
-           updateChat(`${AI_ROLES.ARCHITECT}: Analyzing the existing code...`);
-           const chat1 = await model.startChat({ history: [] });
-           const result1 = await chat1.sendMessage([{
-               text: `${architectPrompt}
+          // Handle custom prompt or use dropdown selection
+          if (customPrompt) {
+            updateChat(`${AI_ROLES.ARCHITECT}: Processing custom prompt: "${customPrompt}"`);
+            const chat1 = await model.startChat({ history: [] });
+            const result1 = await chat1.sendMessage([{
+                text: `${architectPrompt} Create code for the following request: ${customPrompt}`
+            }]);
+            initialResponse = await result1.response.text();
+
+            // Extract and display Architect's plan for custom prompt
+            const architectFeatures = initialResponse
+                .split('\n')
+                .filter(line => line.trim().startsWith('*') || line.trim().startsWith('-') || line.trim().startsWith('•'))
+                .map(line => line.trim());
+            if (architectFeatures.length > 0) {
+                updateChat(`${AI_ROLES.ARCHITECT}: Here's my approach to your custom request:\n${architectFeatures.join('\n')}`);
+            }
+          } else if (selectedPrompt === "self-improve") {
+            updateChat(`${AI_ROLES.ARCHITECT}: Analyzing the existing code...`);
+            const chat1 = await model.startChat({ history: [] });
+            const result1 = await chat1.sendMessage([
+              {
+                text: `${architectPrompt}
                      Analyze this code and suggest improvements. List your analysis in bullet points before providing the improved code:
-                     ${editor.getValue()}`
-           }]);
-           const analysis = await result1.response.text();
-           
-           // Extract bullet points and add to chat
-           const bulletPoints = analysis.match(/[•\-\*].+/g);
-           if (bulletPoints) {
-               updateChat(`${AI_ROLES.ARCHITECT}: Here are my suggested improvements:\n${bulletPoints.join('\n')}`);
-           }
-           
-           initialResponse = analysis;
-       } else {
-           updateChat(`${AI_ROLES.ARCHITECT}: Creating initial solution...`);
-           const chat1 = await model.startChat({ history: [] });
-           const promptText = selectedPrompt === "freestyle" 
-               ? `${architectPrompt} Create something creative and unique using HTML, CSS, and JavaScript.`
-               : `${architectPrompt} ${document.getElementById("prompt-selector").selectedOptions[0].text}`;
-           
-           const result1 = await chat1.sendMessage([{ text: promptText }]);
-           initialResponse = await result1.response.text();
-           
-           // Extract and display Architect's plan
-           const architectFeatures = initialResponse.split('\n')
-               .filter(line => line.trim().startsWith('*') || line.trim().startsWith('-') || line.trim().startsWith('•'))
-               .map(line => line.trim());
-           if (architectFeatures.length > 0) {
-               updateChat(`${AI_ROLES.ARCHITECT}: Here's my planned approach:\n${architectFeatures.join('\n')}`);
-           } else {
-               // Try to extract comments if no bullet points found
-               const comments = initialResponse.match(/\/\*[\s\S]*?\*\/|\/\/.+/g);
-               if (comments) {
-                   updateChat(`${AI_ROLES.ARCHITECT}: Here's my planned approach:\n${comments.join('\n')}`);
-               }
-           }
-       }
+                     ${editor.getValue()}`,
+              },
+            ]);
+            const analysis = await result1.response.text();
 
-       // Second AI (Tester) validates the solution
-       updateChat(`${AI_ROLES.TESTER}: Beginning code validation and testing...`);
-       const chat2 = await model2.startChat({ history: [] });
-       const result2 = await chat2.sendMessage([{
-           text: `${testerPrompt}
+            // Extract bullet points and add to chat
+            const bulletPoints = analysis.match(/[•\-\*].+/g);
+            if (bulletPoints) {
+              updateChat(
+                `${
+                  AI_ROLES.ARCHITECT
+                }: Here are my suggested improvements:\n${bulletPoints.join(
+                  "\n"
+                )}`
+              );
+            }
+
+            initialResponse = analysis;
+          } else {
+            updateChat(`${AI_ROLES.ARCHITECT}: Creating initial solution...`);
+            const chat1 = await model.startChat({ history: [] });
+            const promptText =
+              selectedPrompt === "freestyle"
+                ? `${architectPrompt} Create something creative and unique using HTML, CSS, and JavaScript.`
+                : `${architectPrompt} ${
+                    document.getElementById("prompt-selector")
+                      .selectedOptions[0].text
+                  }`;
+
+            const result1 = await chat1.sendMessage([{ text: promptText }]);
+            initialResponse = await result1.response.text();
+
+            // Extract and display Architect's plan
+            const architectFeatures = initialResponse
+              .split("\n")
+              .filter(
+                (line) =>
+                  line.trim().startsWith("*") ||
+                  line.trim().startsWith("-") ||
+                  line.trim().startsWith("•")
+              )
+              .map((line) => line.trim());
+            if (architectFeatures.length > 0) {
+              updateChat(
+                `${
+                  AI_ROLES.ARCHITECT
+                }: Here's my planned approach:\n${architectFeatures.join("\n")}`
+              );
+            } else {
+              // Try to extract comments if no bullet points found
+              const comments = initialResponse.match(
+                /\/\*[\s\S]*?\*\/|\/\/.+/g
+              );
+              if (comments) {
+                updateChat(
+                  `${
+                    AI_ROLES.ARCHITECT
+                  }: Here's my planned approach:\n${comments.join("\n")}`
+                );
+              }
+            }
+          }
+
+          // Second AI (Tester) validates the solution
+          updateChat(
+            `${AI_ROLES.TESTER}: Beginning code validation and testing...`
+          );
+          const chat2 = await model2.startChat({ history: [] });
+          const result2 = await chat2.sendMessage([
+            {
+              text: `${testerPrompt}
                  Test this code thoroughly and provide your analysis:
-                 ${initialResponse}`
-       }]);
-       const testResponse = await result2.response.text();
+                 ${initialResponse}`,
+            },
+          ]);
+          const testResponse = await result2.response.text();
 
-       // Extract test results for chat
-       const testResults = testResponse.match(/[•✓!][\s\S]+?(?=\n[•✓!]|\n\n|$)/g);
-       if (testResults) {
-           updateChat(`${AI_ROLES.TESTER}: Test Results:\n${testResults.join('\n')}`);
-       }
+          // Extract test results for chat
+          const testResults = testResponse.match(
+            /[•✓!][\s\S]+?(?=\n[•✓!]|\n\n|$)/g
+          );
+          if (testResults) {
+            updateChat(
+              `${AI_ROLES.TESTER}: Test Results:\n${testResults.join("\n")}`
+            );
+          }
 
-       // Use the original code since tester doesn't modify it
-       let finalCode = validateCode(initialResponse);
+          // Use the original code since tester doesn't modify it
+          let finalCode = validateCode(initialResponse);
 
-       // Extract just the HTML code if it's mixed with comments
-       const htmlMatch = finalCode.match(/<(!DOCTYPE|html)[\s\S]+<\/html>/i);
-       if (htmlMatch) {
-           finalCode = validateCode(htmlMatch[0]);
-       }
-       
-       if (!finalCode.trim().toLowerCase().startsWith('<!doctype html>')) {
-           finalCode = `<!DOCTYPE html>
+          // Extract just the HTML code if it's mixed with comments
+          const htmlMatch = finalCode.match(/<(!DOCTYPE|html)[\s\S]+<\/html>/i);
+          if (htmlMatch) {
+            finalCode = validateCode(htmlMatch[0]);
+          }
+
+          if (!finalCode.trim().toLowerCase().startsWith("<!doctype html>")) {
+            finalCode = `<!DOCTYPE html>
 <html>
 <head>
  <title>Generated Code</title>
@@ -477,175 +771,224 @@ Return a detailed report of all tests performed.`;
 ${finalCode}
 </body>
 </html>`;
-       }
+          }
 
-       // Add debug checks before setting the code
-const debugIssues = debugCode(finalCode);
+          // Add debug checks before setting the code
+          const debugIssues = debugCode(finalCode);
 
-if (debugIssues.length > 0) {
-    updateChat('🔍 Debug Results:');
-    debugIssues.forEach(issue => {
-        const icon = issue.type === 'error' ? '❌' : issue.type === 'warning' ? '⚠️' : 'ℹ️';
-        updateChat(`${icon} ${issue.type.toUpperCase()}: ${issue.message}\n   💡 Suggestion: ${issue.suggestion}`);
-    });
-}
+          if (debugIssues.length > 0) {
+            updateChat("🔍 Debug Results:");
+            debugIssues.forEach((issue) => {
+              const icon =
+                issue.type === "error"
+                  ? "❌"
+                  : issue.type === "warning"
+                  ? "⚠️"
+                  : "ℹ️";
+              updateChat(
+                `${icon} ${issue.type.toUpperCase()}: ${
+                  issue.message
+                }\n   💡 Suggestion: ${issue.suggestion}`
+              );
+            });
+          }
 
-if (debugIssues.some(issue => issue.type === 'error')) {
-    updateChat("System: ⚠️ Critical issues found in generated code. Please review debug results.");
-} else if (debugIssues.length > 0) {
-    updateChat("System: Code generated with some suggestions for improvement.");
-} else {
-    updateChat("System: Code passes all debug checks! ✅");
-}
+          if (debugIssues.some((issue) => issue.type === "error")) {
+            updateChat(
+              "System: ⚠️ Critical issues found in generated code. Please review debug results."
+            );
+          } else if (debugIssues.length > 0) {
+            updateChat(
+              "System: Code generated with some suggestions for improvement."
+            );
+          } else {
+            updateChat("System: Code passes all debug checks! ✅");
+          }
 
-editor.setValue(validateCode(finalCode));
-updateChat("System: Code generation and testing complete! Run it to see the results.");
-tokenUsage += 400;
-document.getElementById("token-count").innerText = tokenUsage;
+          editor.setValue(validateCode(finalCode));
+          updateChat(
+            "System: Code generation and testing complete! Run it to see the results."
+          );
+          tokenUsage += 400;
+          document.getElementById("token-count").innerText = tokenUsage;
+        } catch (error) {
+          console.error("Error in AI collaboration:", error);
+          updateChat("System: An error occurred during code generation.");
+        } finally {
+          generateBtn.classList.remove("loading");
+          generateBtn.disabled = false;
+        }
+      }
 
-} catch (error) {
-    console.error("Error in AI collaboration:", error);
-    updateChat("System: An error occurred during code generation.");
-} finally {
-    generateBtn.classList.remove("loading");
-    generateBtn.disabled = false;
-}
-}
+      function debugCode(code) {
+        const issues = [];
 
-function debugCode(code) {
-    const issues = [];
-    
-    // Check for HTML issues
-    if (code.includes('getElementById') && !code.includes('id="')) {
-        issues.push({
-            type: 'error',
-            message: 'JavaScript references ID but no matching ID attribute found',
-            suggestion: 'Add missing ID attributes to elements referenced in JavaScript'
-        });
-    }
-
-    // Check for JavaScript issues
-    if (!code.includes('(function()') && code.includes('<script>')) {
-        issues.push({
-            type: 'warning',
-            message: 'JavaScript not wrapped in IIFE',
-            suggestion: 'Wrap JavaScript code in (function() { ... })(); to prevent scope issues'
-        });
-    }
-
-    if (code.includes('addEventListener') && !code.includes('try {')) {
-        issues.push({
-            type: 'warning',
-            message: 'Missing error handling in event listeners',
-            suggestion: 'Add try-catch blocks around event listener code'
-        });
-    }
-
-    // Check for CSS issues
-    if (code.includes('style') && code.includes('{') && !code.includes('transition')) {
-        issues.push({
-            type: 'info',
-            message: 'Interactive elements missing transitions',
-            suggestion: 'Add CSS transitions for smoother interactions'
-        });
-    }
-
-    // Check for accessibility
-    if (code.includes('<button') && !code.includes('aria-label')) {
-        issues.push({
-            type: 'warning',
-            message: 'Button missing accessibility attributes',
-            suggestion: 'Add aria-label to buttons for screen readers'
-        });
-    }
-
-    // Check for semantic HTML
-    if (!code.includes('<header') && !code.includes('<main') && !code.includes('<footer')) {
-        issues.push({
-            type: 'info',
-            message: 'Missing semantic HTML elements',
-            suggestion: 'Use semantic elements like <header>, <main>, and <footer>'
-        });
-    }
-
-    return issues;
-}
-
-async function runCode() {
-    const runBtn = document.getElementById("run-btn");
-    
-    // Add loading state
-    runBtn.classList.add("loading");
-    runBtn.disabled = true;
-    
-    try {
-        const code = editor.getValue();
-        const iframe = document.getElementById("preview").contentWindow.document;
-        iframe.open();
-        iframe.write(code);
-        iframe.close();
-        
-        // Add a small delay to show the loading state
-        await new Promise(resolve => setTimeout(resolve, 500));
-    } finally {
-        // Remove loading state
-        runBtn.classList.remove("loading");
-        runBtn.disabled = false;
-    }
-}
-        async function clearEditor() {
-            const clearBtn = document.getElementById("clear-btn");
-
-            clearBtn.classList.add("loading");
-            clearBtn.disabled = true;
-
-            editor.setValue("");
-            document.getElementById("preview").contentWindow.document.open();
-            document.getElementById("preview").contentWindow.document.write("");
-            document.getElementById("preview").contentWindow.document.close();
-
-            setTimeout(() => {
-                clearBtn.classList.remove("loading");
-                clearBtn.disabled = false;
-            }, 300);
+        // Check for HTML issues
+        if (code.includes("getElementById") && !code.includes('id="')) {
+          issues.push({
+            type: "error",
+            message:
+              "JavaScript references ID but no matching ID attribute found",
+            suggestion:
+              "Add missing ID attributes to elements referenced in JavaScript",
+          });
         }
 
-        function updateChat(message) {
-    const chatDiv = document.getElementById("ai-chat");
-    const messageElement = document.createElement('div');
-    messageElement.className = 'mb-2 p-2 rounded';
-    
-    // Style based on who's speaking
-    if (message.includes(AI_ROLES.ARCHITECT)) {
-        messageElement.className += ' bg-blue-50';
-    } else if (message.includes(AI_ROLES.TESTER)) {
-        messageElement.className += ' bg-green-50';
-    } else if (message.includes('❌')) {  // Error messages
-        messageElement.className += ' bg-red-50';
-    } else if (message.includes('⚠️')) {  // Warning messages
-        messageElement.className += ' bg-yellow-50';
-    } else if (message.includes('ℹ️')) {  // Info messages
-        messageElement.className += ' bg-gray-50';
-    } else {
-        messageElement.className += ' bg-gray-50';
-    }
-    
-    // Format bullet points and debug messages with proper spacing
-    message = message.replace(/\n/g, '<br>');
-    message = message.replace(/💡 Suggestion:/g, '<br>💡 Suggestion:');
-    messageElement.innerHTML = message;
-    chatDiv.appendChild(messageElement);
-    chatDiv.scrollTop = chatDiv.scrollHeight;
-}
+        // Check for JavaScript issues
+        if (!code.includes("(function()") && code.includes("<script>")) {
+          issues.push({
+            type: "warning",
+            message: "JavaScript not wrapped in IIFE",
+            suggestion:
+              "Wrap JavaScript code in (function() { ... })(); to prevent scope issues",
+          });
+        }
 
-        document
-            .getElementById("generate-btn")
-            .addEventListener("click", generateCode);
-        document.getElementById("run-btn").addEventListener("click", runCode);
-        document
-            .getElementById("clear-btn")
-            .addEventListener("click", clearEditor);
+        if (code.includes("addEventListener") && !code.includes("try {")) {
+          issues.push({
+            type: "warning",
+            message: "Missing error handling in event listeners",
+            suggestion: "Add try-catch blocks around event listener code",
+          });
+        }
+
+        // Check for CSS issues
+        if (
+          code.includes("style") &&
+          code.includes("{") &&
+          !code.includes("transition")
+        ) {
+          issues.push({
+            type: "info",
+            message: "Interactive elements missing transitions",
+            suggestion: "Add CSS transitions for smoother interactions",
+          });
+        }
+
+        // Check for accessibility
+        if (code.includes("<button") && !code.includes("aria-label")) {
+          issues.push({
+            type: "warning",
+            message: "Button missing accessibility attributes",
+            suggestion: "Add aria-label to buttons for screen readers",
+          });
+        }
+
+        // Check for semantic HTML
+        if (
+          !code.includes("<header") &&
+          !code.includes("<main") &&
+          !code.includes("<footer")
+        ) {
+          issues.push({
+            type: "info",
+            message: "Missing semantic HTML elements",
+            suggestion:
+              "Use semantic elements like <header>, <main>, and <footer>",
+          });
+        }
+
+        return issues;
+      }
+
+      async function runCode() {
+        const runBtn = document.getElementById("run-btn");
+
+        // Add loading state
+        runBtn.classList.add("loading");
+        runBtn.disabled = true;
+
+        try {
+          const code = editor.getValue();
+          const iframe =
+            document.getElementById("preview").contentWindow.document;
+          iframe.open();
+          iframe.write(code);
+          iframe.close();
+
+          // Add a small delay to show the loading state
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        } finally {
+          // Remove loading state
+          runBtn.classList.remove("loading");
+          runBtn.disabled = false;
+        }
+      }
+      async function clearEditor() {
+        const clearBtn = document.getElementById("clear-btn");
+
+        clearBtn.classList.add("loading");
+        clearBtn.disabled = true;
+
+        editor.setValue("");
+        document.getElementById("preview").contentWindow.document.open();
+        document.getElementById("preview").contentWindow.document.write("");
+        document.getElementById("preview").contentWindow.document.close();
+
+        setTimeout(() => {
+          clearBtn.classList.remove("loading");
+          clearBtn.disabled = false;
+        }, 300);
+      }
+
+      function updateChat(message) {
+        const chatDiv = document.getElementById("ai-chat");
+        const messageElement = document.createElement("div");
+        messageElement.className = "mb-2 p-2 rounded";
+
+        // Style based on who's speaking
+        if (message.includes(AI_ROLES.ARCHITECT)) {
+          messageElement.className += " bg-blue-50";
+        } else if (message.includes(AI_ROLES.TESTER)) {
+          messageElement.className += " bg-green-50";
+        } else if (message.includes("❌")) {
+          // Error messages
+          messageElement.className += " bg-red-50";
+        } else if (message.includes("⚠️")) {
+          // Warning messages
+          messageElement.className += " bg-yellow-50";
+        } else if (message.includes("ℹ️")) {
+          // Info messages
+          messageElement.className += " bg-gray-50";
+        } else {
+          messageElement.className += " bg-gray-50";
+        }
+
+        // Format bullet points and debug messages with proper spacing
+        message = message.replace(/\n/g, "<br>");
+        message = message.replace(/💡 Suggestion:/g, "<br>💡 Suggestion:");
+        messageElement.innerHTML = message;
+        chatDiv.appendChild(messageElement);
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+      }
+
+      document.getElementById("custom-prompt-btn").addEventListener("click", () => {
+            const customPrompt = document.getElementById("custom-prompt").value.trim();
+            if (customPrompt) {
+                generateCode(customPrompt);
+                document.getElementById("custom-prompt").value = ''; // Clear after submission
+            }
+        });
+
+        document.getElementById("custom-prompt").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                const customPrompt = e.target.value.trim();
+                if (customPrompt) {
+                    generateCode(customPrompt);
+                    e.target.value = ''; // Clear after submission
+                }
+            }
+        });
+
+      document
+        .getElementById("generate-btn")
+        .addEventListener("click", generateCode);
+      document.getElementById("run-btn").addEventListener("click", runCode);
+      document
+        .getElementById("clear-btn")
+        .addEventListener("click", clearEditor);
+        
     </script>
-</body>
-
+  </body>
 </html>
