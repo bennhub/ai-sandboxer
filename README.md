@@ -11,6 +11,32 @@ This repo is intentionally hands-on:
 - compare deterministic logic vs AI-assisted guidance
 - turn real interview or job-market signals into portfolio projects
 
+## Quick Start
+
+1. Install the local coding model:
+
+   ```bash
+   ollama pull qwen2.5-coder:7b
+   ```
+
+2. Start Ollama if it is not already running:
+
+   ```bash
+   ollama serve
+   ```
+
+3. Start the app from the repo folder:
+
+   ```bash
+   python3 -m http.server 8000
+   ```
+
+4. Open the app in your browser:
+
+   ```text
+   http://127.0.0.1:8000/index.html
+   ```
+
 ## Current Project: Test Code Dojo
 
 The first project inside AI Sandboxer is `Test Code Dojo`.
@@ -94,6 +120,22 @@ This is deliberate. A big part of the project is showing that AI works better wh
 
 ## Running Test Code Dojo
 
+Before launching the app, install the local coding model used by the dojo.
+
+Required model:
+
+```bash
+ollama pull qwen2.5-coder:7b
+```
+
+You can confirm it is installed with:
+
+```bash
+ollama list
+```
+
+Make sure Ollama is running before you open the app.
+
 From the repo folder:
 
 ```bash
@@ -106,11 +148,10 @@ Then open:
 http://127.0.0.1:8000/index.html
 ```
 
-Make sure Ollama is running and that you have a supported model installed, for example:
+If you have not started Ollama yet:
 
 ```bash
-ollama list
-ollama pull qwen2.5-coder:7b
+ollama serve
 ```
 
 ## Portfolio Framing
