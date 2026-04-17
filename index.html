@@ -2,993 +2,852 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
-    <title>AI Coding Sandbox</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Code Dojo</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.5/split.min.js"></script>
     <script type="importmap">
       {
         "imports": {
-          "@google/generative-ai": "https://esm.run/@google/generative-ai",
           "monaco-editor": "https://esm.run/monaco-editor"
         }
       }
     </script>
-
-    <!-- CSS STYLES -->
     <style>
-      /* Base Layout */
-      .layout-container {
-        height: 100vh;
-        overflow: hidden;
-        padding: 1rem;
+      @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+      :root {
+        --bg: #f5efe6;
+        --ink: #1e1913;
+        --muted: #6f6658;
+        --line: rgba(44, 36, 26, 0.12);
+        --panel: rgba(255, 252, 247, 0.82);
+        --accent: #cf5d2d;
+        --accent-dark: #9f3f18;
+        --green: #245c5a;
+        --shadow: 0 24px 50px rgba(63, 42, 17, 0.12);
       }
 
-      .split-horizontal {
-        display: flex;
-        height: calc(100% - 4rem); /* Account for header */
+      * {
+        box-sizing: border-box;
       }
 
-      .split-vertical {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Grotesk", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(255, 173, 97, 0.22), transparent 24%),
+          radial-gradient(circle at bottom right, rgba(36, 92, 90, 0.16), transparent 20%),
+          linear-gradient(180deg, #faf4eb 0%, #efe3d0 100%);
       }
 
-      /* Panel Styles */
+      .hidden {
+        display: none !important;
+      }
+
+      .page-shell {
+        min-height: 100vh;
+        padding: 20px;
+      }
+
       .panel {
-        overflow: hidden;
-        background: #f8f9fa;
-        border-radius: 0.5rem;
-        margin: 0.25rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
       }
 
-      #editor-panel,
-      #preview-panel {
-        height: 100%;
+      .home {
+        min-height: calc(100vh - 40px);
+        display: grid;
+        place-items: center;
+      }
+
+      .home-card {
+        width: min(1100px, 100%);
+        padding: 28px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        margin-bottom: 14px;
+        border-radius: 999px;
+        background: rgba(36, 92, 90, 0.1);
+        color: var(--green);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 18px 0 12px;
+        font-size: clamp(34px, 5vw, 54px);
+        line-height: 0.95;
+        letter-spacing: -0.05em;
+      }
+
+      .lede {
+        max-width: 760px;
+        margin: 0 0 24px;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 18px;
+      }
+
+      .mode-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .mode-card {
+        text-align: left;
+        padding: 20px;
+        border: 1px solid rgba(44, 36, 26, 0.1);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.72);
+        cursor: pointer;
+        transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+      }
+
+      .mode-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(207, 93, 45, 0.35);
+        box-shadow: 0 14px 30px rgba(63, 42, 17, 0.08);
+      }
+
+      .mode-card h2 {
+        margin: 0 0 8px;
+        font-size: 24px;
+      }
+
+      .mode-card p {
+        margin: 0 0 14px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .mode-card span {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(207, 93, 45, 0.1);
+        color: var(--accent-dark);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .practice {
+        min-height: calc(100vh - 40px);
+        display: grid;
+        grid-template-columns: 380px minmax(0, 1fr);
+        gap: 18px;
+      }
+
+      .sidebar,
+      .workspace {
+        min-height: 0;
+      }
+
+      .sidebar {
+        padding: 20px;
+        display: grid;
+        grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+        gap: 16px;
+      }
+
+      .top-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .back-btn,
+      .action-btn,
+      .mini-btn {
+        border: 0;
+        border-radius: 999px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease, opacity 140ms ease;
+      }
+
+      .back-btn,
+      .mini-btn {
+        padding: 10px 14px;
+        background: rgba(44, 36, 26, 0.06);
+        color: var(--ink);
+      }
+
+      .back-btn:hover,
+      .mini-btn:hover {
+        transform: translateY(-1px);
+        background: rgba(44, 36, 26, 0.1);
+      }
+
+      .back-btn:active,
+      .mini-btn:active,
+      .action-btn:active {
+        transform: translateY(0) scale(0.98);
+      }
+
+      .section h2 {
+        margin: 0 0 6px;
+        font-size: 18px;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .field label {
+        display: block;
+        margin-bottom: 7px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .select,
+      .textarea {
+        width: 100%;
+        border: 1px solid rgba(44, 36, 26, 0.12);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.88);
+        padding: 14px 16px;
+        font: inherit;
+        color: var(--ink);
+      }
+
+      .textarea {
+        min-height: 88px;
+        resize: vertical;
+      }
+
+      .brief {
+        padding: 16px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.74);
+        border: 1px solid rgba(44, 36, 26, 0.08);
+      }
+
+      .brief h3 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+
+      .meta-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 10px 0 14px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid rgba(44, 36, 26, 0.08);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .instructions {
+        display: grid;
+        gap: 10px;
+      }
+
+      .instruction,
+      .check {
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.76);
+        border: 1px solid rgba(44, 36, 26, 0.08);
+        line-height: 1.45;
+      }
+
+      .check.pass {
+        background: rgba(229, 248, 237, 0.92);
+      }
+
+      .check.fail {
+        background: rgba(255, 236, 232, 0.92);
+      }
+
+      .coach-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .action-btn {
+        padding: 12px 14px;
+        background: rgba(36, 92, 90, 0.12);
+        color: var(--green);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .action-btn.primary {
+        background: linear-gradient(135deg, var(--accent), #ef9450);
+        color: #fff8f2;
+      }
+
+      .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 22px rgba(63, 42, 17, 0.08);
+      }
+
+      .action-btn.primary:hover {
+        box-shadow: 0 12px 24px rgba(207, 93, 45, 0.24);
+      }
+
+      .action-btn:disabled,
+      .mini-btn:disabled,
+      .back-btn:disabled {
+        opacity: 0.68;
+        cursor: wait;
+      }
+
+      .spinner {
+        display: none;
+        width: 14px;
+        height: 14px;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      .loading .spinner {
+        display: inline-block;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+
+      .workspace-top {
+        padding: 18px 22px;
+        border-bottom: 1px solid rgba(44, 36, 26, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .workspace-top h2 {
+        margin: 0 0 6px;
+        font-size: 24px;
+        letter-spacing: -0.04em;
+      }
+
+      .workspace-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .status-note {
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
       }
 
       #editor {
         width: 100%;
         height: 100%;
-        border-radius: 0.5rem;
+        min-height: 520px;
+        border-radius: 0 0 28px 28px;
       }
 
-      #preview {
-        width: 100%;
-        height: 100%;
-        border-radius: 0.5rem;
-        border: 2px solid #e5e7eb;
-        background-color: white;
-      }
-
-      #prompt-panel {
-        padding: 1rem;
-        background-color: white;
-      }
-
-      #ai-chat {
-        height: 100%;
-        overflow-y: auto;
-        background-color: white;
-        padding: 1rem;
-        border-radius: 0.5rem;
-      }
-
-      /* Button Styles */
-      .button-base {
-        transition: all 0.2s;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .button-base:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
-
-      .button-base:active {
-        transform: translateY(0px) scale(0.98);
-      }
-
-      .button-base:disabled {
-        opacity: 0.7;
-        cursor: not-allowed;
-      }
-
-      /* Spinner Animation */
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-
-      .spinner {
-        display: none;
-        width: 16px;
-        height: 16px;
-        border: 2px solid #ffffff;
-        border-top: 2px solid transparent;
-        border-radius: 50%;
-        margin-right: 8px;
-        animation: spin 1s linear infinite;
-      }
-
-      .button-base.loading .spinner {
-        display: inline-block;
-      }
-
-      /* Gutter Styles */
-      .gutter {
-        background-color: #eee;
-        background-repeat: no-repeat;
-        background-position: 50%;
-      }
-
-      .gutter.gutter-horizontal {
-        background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==");
-        cursor: col-resize;
-        width: 8px;
-      }
-
-      .gutter.gutter-vertical {
-        background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=");
-        cursor: row-resize;
-        height: 8px;
-      }
-
-      /* Chat Message Styles */
-      .message {
-        margin-bottom: 0.5rem;
-        padding: 0.5rem;
-        border-radius: 0.375rem;
-      }
-
-      .bg-blue-50 {
-        background-color: #eff6ff;
-      }
-      .bg-green-50 {
-        background-color: #f0fdf4;
-      }
-      .bg-red-50 {
-        background-color: #fef2f2;
-      }
-      .bg-yellow-50 {
-        background-color: #fefce8;
-      }
-      .bg-gray-50 {
-        background-color: #f9fafb;
-      }
-
-      /* Responsive Styles */
-      @media (min-width: 1024px) {
-        .split-horizontal > div:first-child {
-          flex: 0 0 25%;
-        }
-
-        .split-horizontal > div:last-child {
-          flex: 0 0 75%;
-        }
-      }
-
-      @media (max-width: 768px) {
-        .split-horizontal {
-          flex-direction: column;
-        }
-
-        .gutter-horizontal {
-          display: none;
-        }
-
-        .panel {
-          min-height: 300px;
-        }
-
-        .monaco-editor {
-          min-height: 300px !important;
-        }
-
-        .monaco-editor .overflow-guard {
-          width: 100% !important;
-        }
-      }
-
-      @media (max-width: 640px) {
-        .layout-container {
-          padding: 0.5rem;
-        }
-
-        .panel {
-          margin: 0.125rem;
+      @media (max-width: 980px) {
+        .mode-grid,
+        .practice {
+          grid-template-columns: 1fr;
         }
       }
     </style>
-
-    <!-- HTML -->
   </head>
+  <body>
+    <div class="page-shell">
+      <main id="home-view" class="home">
+        <section class="panel home-card">
+          <span class="eyebrow">Test Code Dojo</span>
+          <h1>AI-powered QA code practice using local Qwen coder.</h1>
+          <p class="lede">
+            Train automation coding, code review, test design, and AI workflow
+            skills in one local-first dojo built around Qwen2.5-Coder.
+          </p>
 
-  <body class="bg-gray-100">
-    <div class="layout-container">
-      <h1 class="text-2xl font-bold mb-4">AI Coding Sandbox</h1>
+          <div id="mode-grid" class="mode-grid"></div>
+        </section>
+      </main>
 
-      <div class="split-horizontal">
-        <!-- Left Panel Container -->
-        <div class="split-vertical" id="left-pane">
-          <!-- Top Left: Prompt Panel -->
-          <div class="panel" id="prompt-panel">
-            <!-- Future Custom Prompt Input -->
-            <div class="mb-4 hidden">
-              <div class="flex gap-2">
-                <input
-                  type="text"
-                  class="w-full p-2 border rounded"
-                  placeholder="Enter custom prompt..."
-                />
-                <button class="px-4 py-2 bg-blue-500 text-white rounded">
-                  Submit
-                </button>
-              </div>
-            </div>
-<!-- Prompt Imput -->
-<div class="mb-4">
-    <div class="flex gap-2">
-        <input 
-            type="text" 
-            id="custom-prompt" 
-            class="w-full p-2 border rounded" 
-            placeholder="Enter your custom prompt here..."
-        >
-        <button 
-            id="custom-prompt-btn" 
-            class="button-base bg-blue-500 text-white px-4 py-2 rounded flex items-center justify-center"
-        >
-            <span class="spinner"></span>
-            <span class="button-text">Submit</span>
-        </button>
-    </div>
-</div>
-            <!-- Prompt Selector -->
-            <select id="prompt-selector" class="w-full mb-3 p-2 rounded border">
-              <optgroup label="HTML/CSS">
-                <option value="hover">
-                  Create a button with a cool hover effect
-                </option>
-                <option value="loading">
-                  Generate a smooth loading animation using CSS
-                </option>
-                <option value="glitch">
-                  Make a text effect that looks like it's glitching
-                </option>
-                <option value="neon">Design a glowing neon text effect</option>
-                <option value="kinetic-typography">
-                  Kinetic Typography: Animate text dynamically using CSS
-                </option>
-                <option value="interactive-svg">
-                  Interactive SVG Illustrations
-                </option>
-                <option value="responsive-grids">Responsive Text Grids</option>
-                <option value="color-palettes">
-                  Customizable Color Palettes
-                </option>
-              </optgroup>
+      <main id="practice-view" class="practice hidden">
+        <aside class="panel sidebar">
+          <div class="top-row">
+            <button id="back-btn" class="back-btn">Back</button>
+            <span id="model-badge" class="status-note">qwen2.5-coder:7b</span>
+          </div>
 
-              <optgroup label="JavaScript">
-                <option value="bounce">Create a bouncing ball animation</option>
-                <option value="procedural-art">Procedural Art Generator</option>
-                <option value="audio-visualizer">
-                  Interactive Audio Visualizer
-                </option>
-                <option value="particle-system">
-                  Canvas-based Particle Systems
-                </option>
-                <option value="webgl-scene">WebGL-powered 3D Scene</option>
-                <option value="chatbot">Interactive Chatbot</option>
-              </optgroup>
+          <section class="section field">
+            <label for="track-selector">Training Lane</label>
+            <select id="track-selector" class="select"></select>
+          </section>
 
-              <optgroup label="HTML/CSS/JavaScript">
-                <option value="parallax">Parallax Scrolling Effect</option>
-                <option value="data-visualization">
-                  Interactive Data Visualizations
-                </option>
-                <option value="stop-motion">
-                  Animated Stop-Motion Stories
-                </option>
-                <option value="navigation-experience">
-                  Personalized Navigation Experiences
-                </option>
-                <option value="quizzes-puzzles">
-                  Gamified Quizzes and Puzzles
-                </option>
-                <option value="whiteboard">Collaborative Whiteboard</option>
-                <option value="audio-player">Create a cool audio player</option>
-              </optgroup>
+          <section class="section field">
+            <label for="exercise-selector">Exercise</label>
+            <select id="exercise-selector" class="select"></select>
+          </section>
 
-              <optgroup label="Other">
-                <option value="self-improve">
-                  Analyze and improve the last code snippet you generated
-                </option>
-                <option value="freestyle">
-                  Freestyle - Generate any creative frontend code
-                </option>
-              </optgroup>
+          <section class="section field">
+            <label for="model-selector">Model</label>
+            <select id="model-selector" class="select">
+              <option value="qwen2.5-coder:7b">qwen2.5-coder:7b</option>
+              <option value="qwen3:8b">qwen3:8b</option>
             </select>
+          </section>
 
-            <!-- Token Tracker -->
-            <div class="text-sm text-gray-700 p-2">
-              Tokens Used: <span id="token-count">0</span> / 10000
+          <section class="section brief">
+            <h3 id="exercise-title">Exercise</h3>
+            <p id="exercise-summary" class="muted"></p>
+            <div class="meta-row">
+              <span id="exercise-category" class="pill">Category</span>
+              <span id="exercise-difficulty" class="pill">Difficulty</span>
             </div>
-          </div>
+            <div id="instructions-list" class="instructions"></div>
+          </section>
 
-          <!-- Bottom Left: AI Chat Panel -->
-          <div class="panel" id="chat-panel">
-            <div
-              id="ai-chat"
-              class="h-full overflow-y-auto bg-white rounded-lg"
-            >
-              <p class="text-gray-600">
-                System: AI collaboration ready to begin...
-              </p>
+          <section class="section">
+            <div class="field">
+              <label for="focus-request">Ask AI Sensei</label>
+              <textarea
+                id="focus-request"
+                class="textarea"
+                placeholder="Example: what is the biggest reliability issue in my draft?"
+              ></textarea>
             </div>
-          </div>
-        </div>
+            <div class="coach-actions">
+              <button id="hint-btn" class="action-btn"><span class="spinner"></span><span>Get Hint</span></button>
+              <button id="bug-btn" class="action-btn"><span class="spinner"></span><span>Explain</span></button>
+              <button id="review-btn" class="action-btn"><span class="spinner"></span><span>Review Draft</span></button>
+              <button id="check-btn" class="action-btn primary"><span class="spinner"></span><span>Run Checks</span></button>
+            </div>
+          </section>
 
-        <!-- Right Panel Container -->
-        <div class="split-vertical" id="right-pane">
-          <!-- Top Right: Code Editor -->
-          <div class="panel" id="editor-panel">
-            <div id="editor" class="w-full h-full"></div>
-          </div>
+          <section id="checks-list" class="instructions"></section>
 
-          <!-- Bottom Right: Preview -->
-          <div class="panel" id="preview-panel">
-            <iframe id="preview" class="w-full h-full bg-white"></iframe>
+          <div class="top-row">
+            <button id="load-exercise-btn" class="mini-btn">Load Exercise</button>
+            <button id="next-btn" class="mini-btn">Next Exercise</button>
           </div>
-        </div>
-      </div>
+        </aside>
 
-      <!-- Controls -->
-      <div class="fixed bottom-4 right-4 flex gap-2 z-10">
-        <button
-          id="generate-btn"
-          class="button-base bg-blue-500 text-white px-4 py-2 rounded flex items-center justify-center"
-        >
-          <span class="spinner"></span>
-          <span class="button-text">Generate Code</span>
-        </button>
-        <button
-          id="run-btn"
-          class="button-base bg-green-500 text-white px-4 py-2 rounded flex items-center justify-center"
-        >
-          <span class="spinner"></span>
-          <span class="button-text">Run Code</span>
-        </button>
-        <button
-          id="clear-btn"
-          class="button-base bg-gray-500 text-white px-4 py-2 rounded flex items-center justify-center"
-        >
-          <span class="spinner"></span>
-          <span class="button-text">Clear</span>
-        </button>
-      </div>
+        <section class="panel workspace">
+          <div class="workspace-top">
+            <div>
+              <h2 id="workspace-title">Workspace</h2>
+              <div id="workspace-subtitle" class="status-note">Starter draft loaded here</div>
+            </div>
+            <div class="workspace-actions"></div>
+          </div>
+          <div id="editor"></div>
+        </section>
+      </main>
     </div>
 
-    <!-- JAVASCRIPT -->
     <script type="module">
-      import { GoogleGenerativeAI } from "@google/generative-ai";
       import * as monaco from "monaco-editor";
+      import { TRACKS, findExercise, findTrack, runChecks } from "./challenges.js";
 
-      // First AI
-      const genAI = new GoogleGenerativeAI(
-        "REMOVED_GEMINI_KEY"
-      );
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      let selectedTrackId = TRACKS[0].id;
+      let selectedExerciseId = TRACKS[0].exercises[0].id;
+      let selectedModel = "qwen2.5-coder:7b";
+      let ollamaEndpoint = "http://127.0.0.1:11434";
 
-      // Second AI
-      const genAI2 = new GoogleGenerativeAI(
-        "REMOVED_GEMINI_KEY"
-      );
-      const model2 = genAI2.getGenerativeModel({ model: "gemini-pro" });
+      const homeView = document.getElementById("home-view");
+      const practiceView = document.getElementById("practice-view");
+      const modeGrid = document.getElementById("mode-grid");
+      const trackSelector = document.getElementById("track-selector");
+      const exerciseSelector = document.getElementById("exercise-selector");
+      const modelSelector = document.getElementById("model-selector");
+      const checksList = document.getElementById("checks-list");
 
-      // Add AI roles
-      const AI_ROLES = {
-        ARCHITECT: "AI Architect",
-        TESTER: "AI Tester", // Changed from ENHANCER to TESTER
-      };
-
-      let tokenUsage = 0;
-      const tokenLimit = 10000;
-
-     // Initialize Monaco Editor
-const editor = monaco.editor.create(document.getElementById("editor"), {
-    value: "<!-- AI-generated code will appear here -->",
-    language: "html",
-    theme: "vs-dark",
-});
-
-// Initialize Split.js for horizontal split (left and right panels)
-const horizontalSplit = Split(['#left-pane', '#right-pane'], {
-    sizes: [25, 75],
-    minSize: [200, 400],
-    gutterSize: 8,
-    direction: 'horizontal',
-    elementStyle: function (dimension, size, gutterSize) {
-        return {
-            'flex-basis': `calc(${size}% - ${gutterSize}px)`,
-        }
-    },
-    gutterStyle: function (dimension, gutterSize) {
-        return {
-            'flex-basis': `${gutterSize}px`,
-        }
-    }
-});
-
-// Initialize Split.js for left vertical split (prompt and chat)
-const leftVerticalSplit = Split([
-    '#prompt-panel',
-    '#chat-panel'
-], {
-    sizes: [30, 70],
-    minSize: [100, 100],
-    gutterSize: 8,
-    direction: 'vertical',
-    elementStyle: function (dimension, size, gutterSize) {
-        return {
-            'flex-basis': `calc(${size}% - ${gutterSize}px)`,
-        }
-    },
-    gutterStyle: function (dimension, gutterSize) {
-        return {
-            'flex-basis': `${gutterSize}px`,
-        }
-    }
-});
-
-// Initialize Split.js for right vertical split (editor and preview)
-const rightVerticalSplit = Split([
-    '#editor-panel',
-    '#preview-panel'
-], {
-    sizes: [50, 50],
-    minSize: [100, 100],
-    gutterSize: 8,
-    direction: 'vertical',
-    elementStyle: function (dimension, size, gutterSize) {
-        return {
-            'flex-basis': `calc(${size}% - ${gutterSize}px)`,
-        }
-    },
-    gutterStyle: function (dimension, gutterSize) {
-        return {
-            'flex-basis': `${gutterSize}px`,
-        }
-    }
-});
-
-// Handle editor resize
-const resizeObserver = new ResizeObserver(() => {
-    if (editor) {
-        editor.layout();
-    }
-});
-
-resizeObserver.observe(document.getElementById('editor-panel'));
-window.addEventListener('resize', () => {
-    if (editor) {
-        editor.layout();
-    }
-});
-
-async function generateCode(customPrompt = null) {
-        const generateBtn = document.getElementById("generate-btn");
-
-        if (tokenUsage >= tokenLimit) {
-          updateChat("System: Token limit reached for today!");
-          return; 
-        }
-
-        generateBtn.classList.add("loading");
-        generateBtn.disabled = true;
-
-        const selectedPrompt = document.getElementById("prompt-selector").value;
-        const baseStructure =
-          "Important: Always provide a complete HTML document with <!DOCTYPE html>, <html>, <head> (including title), and <body> tags. Include all CSS within a <style> tag in the head section. Do not use separate CSS or code blocks - everything must be in a single, complete HTML file.";
-
-        const architectPrompt = `You are an expert frontend architect. 
-CRITICAL HTML RULES:
-1. ALL interactive elements MUST have unique IDs
-2. ALL elements referenced in JavaScript MUST have IDs
-3. ALWAYS use semantic HTML elements (header, nav, main, footer)
-4. ALL images MUST have alt attributes
-5. ALWAYS add aria-labels for accessibility
-
-CRITICAL CSS RULES:
-1. ALL CSS properties must end with semicolons
-2. ALL property values must have proper spacing (e.g., "margin: 0;")
-3. NO extra spaces in property names (e.g., "background-color" NOT "background   color")
-4. Use 2 spaces for indentation
-5. Add transitions for interactive elements
-6. Include hover states for clickable elements
-
-CRITICAL JAVASCRIPT RULES:
-1. ALWAYS wrap JavaScript code in an IIFE to prevent global scope pollution
-2. ALWAYS check if elements exist before adding event listeners
-3. Use const/let instead of var
-4. Add error handling for DOM operations
-5. Use proper event delegation when needed
-6. Include console warnings for potential issues
-
-BEFORE WRITING CODE:
-1. First describe your planned approach in bullet points
-2. Then provide the complete code following the rules above
-
-CORRECT EXAMPLES:
-CSS:
-.example {
- color: #fff;
- background-color: #000;
- margin: 0 auto;
- padding: 20px;
-}
-
-JavaScript:
- (function() {
-      const button = document.getElementById('myButton');
-      if (!button) {
-        console.warn('Button element not found');
-        return;
+      function getTrack() {
+        return findTrack(selectedTrackId);
       }
-      
-      button.addEventListener('click', () => {
-        try {
-          // Your code here
-        } catch (error) {
-          console.error('Error:', error);
+
+      function getExercise() {
+        return findExercise(selectedTrackId, selectedExerciseId);
+      }
+
+      function updateModelBadge() {
+        document.getElementById("model-badge").textContent = selectedModel;
+      }
+
+      function saveConfig() {
+        localStorage.setItem("ollama_endpoint", ollamaEndpoint);
+        localStorage.setItem("selected_model", selectedModel);
+        localStorage.setItem("selected_track", selectedTrackId);
+        localStorage.setItem("selected_exercise", selectedExerciseId);
+      }
+
+      function loadConfig() {
+        const savedEndpoint = localStorage.getItem("ollama_endpoint");
+        const savedModel = localStorage.getItem("selected_model");
+        const savedTrack = localStorage.getItem("selected_track");
+        const savedExercise = localStorage.getItem("selected_exercise");
+
+        if (savedEndpoint) ollamaEndpoint = savedEndpoint;
+        if (savedModel && savedModel !== "gemma3:4b") selectedModel = savedModel;
+        if (savedTrack) selectedTrackId = savedTrack;
+        if (savedExercise) selectedExerciseId = savedExercise;
+
+        updateModelBadge();
+        modelSelector.value = selectedModel;
+      }
+
+      function renderHomeModes() {
+        modeGrid.innerHTML = "";
+
+        for (const track of TRACKS) {
+          const button = document.createElement("button");
+          button.className = "mode-card";
+          button.innerHTML = `
+            <h2>${track.title}</h2>
+            <p>${track.summary}</p>
+            <span>Open lane</span>
+          `;
+          button.addEventListener("click", () => {
+            selectedTrackId = track.id;
+            selectedExerciseId = track.exercises[0].id;
+            saveConfig();
+            openPractice();
+          });
+          modeGrid.appendChild(button);
         }
+      }
+
+      function renderTrackOptions() {
+        trackSelector.innerHTML = "";
+        for (const track of TRACKS) {
+          const option = document.createElement("option");
+          option.value = track.id;
+          option.textContent = track.title;
+          trackSelector.appendChild(option);
+        }
+        trackSelector.value = selectedTrackId;
+      }
+
+      function renderExerciseOptions() {
+        exerciseSelector.innerHTML = "";
+        for (const exercise of getTrack().exercises) {
+          const option = document.createElement("option");
+          option.value = exercise.id;
+          option.textContent = exercise.title;
+          exerciseSelector.appendChild(option);
+        }
+        selectedExerciseId = getExercise().id;
+        exerciseSelector.value = selectedExerciseId;
+      }
+
+      function renderBrief() {
+        const exercise = getExercise();
+        const track = getTrack();
+        document.getElementById("exercise-title").textContent = exercise.title;
+        document.getElementById("exercise-summary").textContent = exercise.summary;
+        document.getElementById("exercise-category").textContent = exercise.category;
+        document.getElementById("exercise-difficulty").textContent = exercise.difficulty;
+        document.getElementById("workspace-title").textContent = track.outputLabel;
+        document.getElementById("workspace-subtitle").textContent = `${track.sourceLabel} + your draft`;
+
+        const instructionsList = document.getElementById("instructions-list");
+        instructionsList.innerHTML = "";
+        for (const instruction of exercise.instructions) {
+          const item = document.createElement("div");
+          item.className = "instruction";
+          item.textContent = instruction;
+          instructionsList.appendChild(item);
+        }
+
+        checksList.innerHTML = "";
+
+        const languageByTrack = {
+          "automation-coding": "typescript",
+          review: "markdown",
+          skills: "markdown",
+          "test-design": "markdown"
+        };
+
+        monaco.editor.setModelLanguage(
+          editor.getModel(),
+          languageByTrack[track.id] || "markdown"
+        );
+      }
+
+      function resetPracticeInputs() {
+        document.getElementById("focus-request").value = "";
+        checksList.innerHTML = "";
+      }
+
+      function loadExercise() {
+        editor.setValue(getExercise().starter);
+        resetPracticeInputs();
+      }
+
+      function renderChecks(results) {
+        checksList.innerHTML = "";
+        for (const result of results) {
+          const item = document.createElement("div");
+          item.className = `check ${result.passed ? "pass" : "fail"}`;
+          item.textContent = `${result.passed ? "PASS" : "MISS"} · ${result.label}`;
+          checksList.appendChild(item);
+        }
+      }
+
+      function performChecks() {
+        renderChecks(runChecks(getExercise(), editor.getValue()));
+      }
+
+      function setButtonLoading(button, loading) {
+        button.classList.toggle("loading", loading);
+        button.disabled = loading;
+      }
+
+      function openReference() {
+        const track = getTrack();
+        const exercise = getExercise();
+
+        if (track.id === "automation-coding") {
+          const win = window.open("", "_blank", "noopener,noreferrer");
+          if (!win) return;
+          win.document.open();
+          win.document.write(`
+            <pre style="white-space:pre-wrap;font-family:ui-monospace,monospace;padding:24px;margin:0;background:#0f172a;color:#e2e8f0;min-height:100vh;">${editor
+              .getValue()
+              .replace(/</g, "&lt;")}</pre>
+          `);
+          win.document.close();
+          return;
+        }
+
+        const win = window.open("", "_blank", "noopener,noreferrer");
+        if (!win) return;
+        win.document.open();
+        win.document.write(`
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>${exercise.title}</title>
+            <style>
+              body { margin: 0; padding: 24px; font-family: system-ui, sans-serif; background: #fffaf2; color: #1f2937; line-height: 1.55; }
+              .card { max-width: 860px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08); }
+              pre { white-space: pre-wrap; background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 18px; overflow: auto; }
+              ul { padding-left: 20px; }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <h1>${exercise.title}</h1>
+              <p>${exercise.summary}</p>
+              <h2>Brief</h2>
+              <ul>${exercise.instructions.map((item) => `<li>${item}</li>`).join("")}</ul>
+              <h2>${track.sourceLabel}</h2>
+              <pre>${exercise.starter.replace(/</g, "&lt;")}</pre>
+            </div>
+          </body>
+          </html>
+        `);
+        win.document.close();
+      }
+
+      function buildSenseiPrompt(mode) {
+        const track = getTrack();
+        const exercise = getExercise();
+        const customFocus = document.getElementById("focus-request").value.trim();
+
+        const modeInstructions = {
+          hint: "Give a short hint only. Do not provide the full solution.",
+          bug: "Explain the likely bug, weakness, or missing coverage in the current draft. Be concrete.",
+          review: "Review the current draft like a QA mentor. List issues, risks, and one next step."
+        };
+
+        return `You are a local ${track.aiRole} for Test Code Dojo.
+
+Track:
+${track.title}
+${track.summary}
+
+Exercise:
+Title: ${exercise.title}
+Category: ${exercise.category}
+Difficulty: ${exercise.difficulty}
+Summary: ${exercise.summary}
+
+Instructions:
+${exercise.instructions.map((item) => `- ${item}`).join("\n")}
+
+Mode:
+${modeInstructions[mode]}
+
+Checks:
+${exercise.checks.map((check) => `- ${check.label}`).join("\n")}
+
+Learner focus:
+${customFocus || "No extra focus provided."}
+
+Current draft:
+\`\`\`
+${editor.getValue()}
+\`\`\`
+
+Constraints:
+- Keep the answer concise.
+- Do not dump a full solution unless explicitly asked.
+- Refer to concrete parts of the draft when possible.`;
+      }
+
+      async function callOllama(prompt) {
+        const response = await fetch(`${ollamaEndpoint}/api/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: selectedModel,
+            prompt,
+            stream: false
+          })
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`HTTP ${response.status}: ${text}`);
+        }
+
+        const data = await response.json();
+        if (data.response) return data.response.trim();
+        throw new Error(data.error || "Unexpected Ollama response format.");
+      }
+
+      async function runSensei(mode, button) {
+        setButtonLoading(button, true);
+        try {
+          const response = await callOllama(buildSenseiPrompt(mode));
+          document.getElementById("focus-request").value = response;
+        } catch (error) {
+          document.getElementById("focus-request").value = `Sensei request failed:\n${error.message}`;
+        } finally {
+          setButtonLoading(button, false);
+        }
+      }
+
+      function nextExercise() {
+        const exercises = getTrack().exercises;
+        const currentIndex = exercises.findIndex((exercise) => exercise.id === selectedExerciseId);
+        const nextIndex = (currentIndex + 1) % exercises.length;
+        selectedExerciseId = exercises[nextIndex].id;
+        renderExerciseOptions();
+        renderBrief();
+        loadExercise();
+        saveConfig();
+      }
+
+      function openPractice() {
+        homeView.classList.add("hidden");
+        practiceView.classList.remove("hidden");
+        renderTrackOptions();
+        renderExerciseOptions();
+        renderBrief();
+        loadExercise();
+      }
+
+      function openHome() {
+        resetPracticeInputs();
+        editor.setValue("// Choose a lane to begin.");
+        practiceView.classList.add("hidden");
+        homeView.classList.remove("hidden");
+      }
+
+      const editor = monaco.editor.create(document.getElementById("editor"), {
+        value: "// Load an exercise to begin.",
+        language: "markdown",
+        theme: "vs-dark",
+        minimap: { enabled: false },
+        smoothScrolling: true,
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 14,
+        lineHeight: 22,
+        padding: { top: 18, bottom: 18 }
       });
-    })();
 
-${baseStructure}`;
+      const resizeObserver = new ResizeObserver(() => editor.layout());
+      resizeObserver.observe(document.getElementById("editor"));
+      window.addEventListener("resize", () => editor.layout());
 
-        const testerPrompt = `You are an expert frontend QA tester.
-YOUR ROLE:
-1. Review and validate the provided code
-2. DO NOT modify the code
-3. Test all functionality and features
-4. Verify code formatting and structure
-5. Check for potential issues or bugs
+      loadConfig();
+      renderHomeModes();
 
-PRE-EXECUTION CHECKS:
-1. Verify all JavaScript-referenced elements have IDs
-2. Confirm all interactive elements have proper attributes
-3. Check for proper IIFE usage in scripts
-4. Verify error handling presence
-5. Check for proper event listener implementations
-
-TEST CASES MUST COVER:
-1. HTML Structure:
-   • All required IDs present
-   • Semantic HTML usage
-   • Accessibility attributes
-   • Proper nesting
-
-2. CSS Validation:
-   • All properties properly formatted
-   • Transitions defined
-   • Hover states present
-   • Responsive design
-
-3. JavaScript Validation:
-   • IIFE implementation
-   • Error handling
-   • Event listener checks
-   • Console warnings
-
-4. Interaction Testing:
-   • Click events
-   • Hover states
-   • Transitions
-   • Error scenarios
-
-PROVIDE YOUR RESPONSE IN THIS FORMAT:
-- Structure Validation:
-  ✓ Required IDs: All present
-  ✓ Semantic HTML: Properly used
-  ! Warning: Missing aria-label on button
-
-- Functionality Testing:
-  ✓ Click events: Working
-  ✓ Transitions: Smooth
-  ! Note: Consider adding loading states
-
-Return a detailed report of all tests performed.`;
-
-        function validateCode(code) {
-          return code
-            .replace(/\s+;/g, ";") // Remove spaces before semicolons
-            .replace(/:\s+/g, ": ") // Ensure single space after colons
-            .replace(/\s{2,}/g, " ") // Remove multiple spaces
-            .replace(/{\s+}/g, "{}") // Fix empty blocks
-            .replace(/(\w+)\s+:/g, "$1:") // Remove spaces before colons
-            .replace(/\(\s+/g, "(") // Remove spaces after opening parentheses
-            .replace(/\s+\)/g, ")") // Remove spaces before closing parentheses
-            .replace(/\s+{/g, " {") // Ensure single space before opening braces
-            .replace(/}\s+/g, "}\n") // Ensure newline after closing braces
-            .replace(/:\s*([^;\n{}]+?)\s*([;}])/g, ": $1$2") // Fix property value spacing
-            .replace(
-              /([a-z-]+)\s*:\s*([^;}]+)[;}]/g,
-              (match, prop, value) => `${prop}: ${value.trim()};`
-            );
-        }
-
-        try {
-          let initialResponse;
-
-          // Handle custom prompt or use dropdown selection
-          if (customPrompt) {
-            updateChat(`${AI_ROLES.ARCHITECT}: Processing custom prompt: "${customPrompt}"`);
-            const chat1 = await model.startChat({ history: [] });
-            const result1 = await chat1.sendMessage([{
-                text: `${architectPrompt} Create code for the following request: ${customPrompt}`
-            }]);
-            initialResponse = await result1.response.text();
-
-            // Extract and display Architect's plan for custom prompt
-            const architectFeatures = initialResponse
-                .split('\n')
-                .filter(line => line.trim().startsWith('*') || line.trim().startsWith('-') || line.trim().startsWith('•'))
-                .map(line => line.trim());
-            if (architectFeatures.length > 0) {
-                updateChat(`${AI_ROLES.ARCHITECT}: Here's my approach to your custom request:\n${architectFeatures.join('\n')}`);
-            }
-          } else if (selectedPrompt === "self-improve") {
-            updateChat(`${AI_ROLES.ARCHITECT}: Analyzing the existing code...`);
-            const chat1 = await model.startChat({ history: [] });
-            const result1 = await chat1.sendMessage([
-              {
-                text: `${architectPrompt}
-                     Analyze this code and suggest improvements. List your analysis in bullet points before providing the improved code:
-                     ${editor.getValue()}`,
-              },
-            ]);
-            const analysis = await result1.response.text();
-
-            // Extract bullet points and add to chat
-            const bulletPoints = analysis.match(/[•\-\*].+/g);
-            if (bulletPoints) {
-              updateChat(
-                `${
-                  AI_ROLES.ARCHITECT
-                }: Here are my suggested improvements:\n${bulletPoints.join(
-                  "\n"
-                )}`
-              );
-            }
-
-            initialResponse = analysis;
-          } else {
-            updateChat(`${AI_ROLES.ARCHITECT}: Creating initial solution...`);
-            const chat1 = await model.startChat({ history: [] });
-            const promptText =
-              selectedPrompt === "freestyle"
-                ? `${architectPrompt} Create something creative and unique using HTML, CSS, and JavaScript.`
-                : `${architectPrompt} ${
-                    document.getElementById("prompt-selector")
-                      .selectedOptions[0].text
-                  }`;
-
-            const result1 = await chat1.sendMessage([{ text: promptText }]);
-            initialResponse = await result1.response.text();
-
-            // Extract and display Architect's plan
-            const architectFeatures = initialResponse
-              .split("\n")
-              .filter(
-                (line) =>
-                  line.trim().startsWith("*") ||
-                  line.trim().startsWith("-") ||
-                  line.trim().startsWith("•")
-              )
-              .map((line) => line.trim());
-            if (architectFeatures.length > 0) {
-              updateChat(
-                `${
-                  AI_ROLES.ARCHITECT
-                }: Here's my planned approach:\n${architectFeatures.join("\n")}`
-              );
-            } else {
-              // Try to extract comments if no bullet points found
-              const comments = initialResponse.match(
-                /\/\*[\s\S]*?\*\/|\/\/.+/g
-              );
-              if (comments) {
-                updateChat(
-                  `${
-                    AI_ROLES.ARCHITECT
-                  }: Here's my planned approach:\n${comments.join("\n")}`
-                );
-              }
-            }
-          }
-
-          // Second AI (Tester) validates the solution
-          updateChat(
-            `${AI_ROLES.TESTER}: Beginning code validation and testing...`
-          );
-          const chat2 = await model2.startChat({ history: [] });
-          const result2 = await chat2.sendMessage([
-            {
-              text: `${testerPrompt}
-                 Test this code thoroughly and provide your analysis:
-                 ${initialResponse}`,
-            },
-          ]);
-          const testResponse = await result2.response.text();
-
-          // Extract test results for chat
-          const testResults = testResponse.match(
-            /[•✓!][\s\S]+?(?=\n[•✓!]|\n\n|$)/g
-          );
-          if (testResults) {
-            updateChat(
-              `${AI_ROLES.TESTER}: Test Results:\n${testResults.join("\n")}`
-            );
-          }
-
-          // Use the original code since tester doesn't modify it
-          let finalCode = validateCode(initialResponse);
-
-          // Extract just the HTML code if it's mixed with comments
-          const htmlMatch = finalCode.match(/<(!DOCTYPE|html)[\s\S]+<\/html>/i);
-          if (htmlMatch) {
-            finalCode = validateCode(htmlMatch[0]);
-          }
-
-          if (!finalCode.trim().toLowerCase().startsWith("<!doctype html>")) {
-            finalCode = `<!DOCTYPE html>
-<html>
-<head>
- <title>Generated Code</title>
- <style>
-   body {
-     margin: 0;
-     padding: 20px;
-     min-height: 100vh;
-     display: flex;
-     justify-content: center;
-     align-items: center;
-   }
- </style>
-</head>
-<body>
-${finalCode}
-</body>
-</html>`;
-          }
-
-          // Add debug checks before setting the code
-          const debugIssues = debugCode(finalCode);
-
-          if (debugIssues.length > 0) {
-            updateChat("🔍 Debug Results:");
-            debugIssues.forEach((issue) => {
-              const icon =
-                issue.type === "error"
-                  ? "❌"
-                  : issue.type === "warning"
-                  ? "⚠️"
-                  : "ℹ️";
-              updateChat(
-                `${icon} ${issue.type.toUpperCase()}: ${
-                  issue.message
-                }\n   💡 Suggestion: ${issue.suggestion}`
-              );
-            });
-          }
-
-          if (debugIssues.some((issue) => issue.type === "error")) {
-            updateChat(
-              "System: ⚠️ Critical issues found in generated code. Please review debug results."
-            );
-          } else if (debugIssues.length > 0) {
-            updateChat(
-              "System: Code generated with some suggestions for improvement."
-            );
-          } else {
-            updateChat("System: Code passes all debug checks! ✅");
-          }
-
-          editor.setValue(validateCode(finalCode));
-          updateChat(
-            "System: Code generation and testing complete! Run it to see the results."
-          );
-          tokenUsage += 400;
-          document.getElementById("token-count").innerText = tokenUsage;
-        } catch (error) {
-          console.error("Error in AI collaboration:", error);
-          updateChat("System: An error occurred during code generation.");
-        } finally {
-          generateBtn.classList.remove("loading");
-          generateBtn.disabled = false;
-        }
-      }
-
-      function debugCode(code) {
-        const issues = [];
-
-        // Check for HTML issues
-        if (code.includes("getElementById") && !code.includes('id="')) {
-          issues.push({
-            type: "error",
-            message:
-              "JavaScript references ID but no matching ID attribute found",
-            suggestion:
-              "Add missing ID attributes to elements referenced in JavaScript",
-          });
-        }
-
-        // Check for JavaScript issues
-        if (!code.includes("(function()") && code.includes("<script>")) {
-          issues.push({
-            type: "warning",
-            message: "JavaScript not wrapped in IIFE",
-            suggestion:
-              "Wrap JavaScript code in (function() { ... })(); to prevent scope issues",
-          });
-        }
-
-        if (code.includes("addEventListener") && !code.includes("try {")) {
-          issues.push({
-            type: "warning",
-            message: "Missing error handling in event listeners",
-            suggestion: "Add try-catch blocks around event listener code",
-          });
-        }
-
-        // Check for CSS issues
-        if (
-          code.includes("style") &&
-          code.includes("{") &&
-          !code.includes("transition")
-        ) {
-          issues.push({
-            type: "info",
-            message: "Interactive elements missing transitions",
-            suggestion: "Add CSS transitions for smoother interactions",
-          });
-        }
-
-        // Check for accessibility
-        if (code.includes("<button") && !code.includes("aria-label")) {
-          issues.push({
-            type: "warning",
-            message: "Button missing accessibility attributes",
-            suggestion: "Add aria-label to buttons for screen readers",
-          });
-        }
-
-        // Check for semantic HTML
-        if (
-          !code.includes("<header") &&
-          !code.includes("<main") &&
-          !code.includes("<footer")
-        ) {
-          issues.push({
-            type: "info",
-            message: "Missing semantic HTML elements",
-            suggestion:
-              "Use semantic elements like <header>, <main>, and <footer>",
-          });
-        }
-
-        return issues;
-      }
-
-      async function runCode() {
-        const runBtn = document.getElementById("run-btn");
-
-        // Add loading state
-        runBtn.classList.add("loading");
-        runBtn.disabled = true;
-
-        try {
-          const code = editor.getValue();
-          const iframe =
-            document.getElementById("preview").contentWindow.document;
-          iframe.open();
-          iframe.write(code);
-          iframe.close();
-
-          // Add a small delay to show the loading state
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        } finally {
-          // Remove loading state
-          runBtn.classList.remove("loading");
-          runBtn.disabled = false;
-        }
-      }
-      async function clearEditor() {
-        const clearBtn = document.getElementById("clear-btn");
-
-        clearBtn.classList.add("loading");
-        clearBtn.disabled = true;
-
-        editor.setValue("");
-        document.getElementById("preview").contentWindow.document.open();
-        document.getElementById("preview").contentWindow.document.write("");
-        document.getElementById("preview").contentWindow.document.close();
-
-        setTimeout(() => {
-          clearBtn.classList.remove("loading");
-          clearBtn.disabled = false;
-        }, 300);
-      }
-
-      function updateChat(message) {
-        const chatDiv = document.getElementById("ai-chat");
-        const messageElement = document.createElement("div");
-        messageElement.className = "mb-2 p-2 rounded";
-
-        // Style based on who's speaking
-        if (message.includes(AI_ROLES.ARCHITECT)) {
-          messageElement.className += " bg-blue-50";
-        } else if (message.includes(AI_ROLES.TESTER)) {
-          messageElement.className += " bg-green-50";
-        } else if (message.includes("❌")) {
-          // Error messages
-          messageElement.className += " bg-red-50";
-        } else if (message.includes("⚠️")) {
-          // Warning messages
-          messageElement.className += " bg-yellow-50";
-        } else if (message.includes("ℹ️")) {
-          // Info messages
-          messageElement.className += " bg-gray-50";
-        } else {
-          messageElement.className += " bg-gray-50";
-        }
-
-        // Format bullet points and debug messages with proper spacing
-        message = message.replace(/\n/g, "<br>");
-        message = message.replace(/💡 Suggestion:/g, "<br>💡 Suggestion:");
-        messageElement.innerHTML = message;
-        chatDiv.appendChild(messageElement);
-        chatDiv.scrollTop = chatDiv.scrollHeight;
-      }
-
-      document.getElementById("custom-prompt-btn").addEventListener("click", () => {
-            const customPrompt = document.getElementById("custom-prompt").value.trim();
-            if (customPrompt) {
-                generateCode(customPrompt);
-                document.getElementById("custom-prompt").value = ''; // Clear after submission
-            }
-        });
-
-        document.getElementById("custom-prompt").addEventListener("keypress", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                const customPrompt = e.target.value.trim();
-                if (customPrompt) {
-                    generateCode(customPrompt);
-                    e.target.value = ''; // Clear after submission
-                }
-            }
-        });
-
-      document
-        .getElementById("generate-btn")
-        .addEventListener("click", generateCode);
-      document.getElementById("run-btn").addEventListener("click", runCode);
-      document
-        .getElementById("clear-btn")
-        .addEventListener("click", clearEditor);
-        
+      document.getElementById("back-btn").addEventListener("click", openHome);
+      trackSelector.addEventListener("change", (event) => {
+        selectedTrackId = event.target.value;
+        selectedExerciseId = getTrack().exercises[0].id;
+        renderExerciseOptions();
+        renderBrief();
+        loadExercise();
+        saveConfig();
+      });
+      exerciseSelector.addEventListener("change", (event) => {
+        selectedExerciseId = event.target.value;
+        renderBrief();
+        loadExercise();
+        saveConfig();
+      });
+      modelSelector.addEventListener("change", (event) => {
+        selectedModel = event.target.value || "qwen2.5-coder:7b";
+        updateModelBadge();
+        saveConfig();
+      });
+      document.getElementById("load-exercise-btn").addEventListener("click", (event) => {
+        const button = event.currentTarget;
+        setButtonLoading(button, true);
+        loadExercise();
+        setTimeout(() => setButtonLoading(button, false), 180);
+      });
+      document.getElementById("check-btn").addEventListener("click", (event) => {
+        const button = event.currentTarget;
+        setButtonLoading(button, true);
+        performChecks();
+        setTimeout(() => setButtonLoading(button, false), 180);
+      });
+      document.getElementById("next-btn").addEventListener("click", nextExercise);
+      document.getElementById("hint-btn").addEventListener("click", (event) => runSensei("hint", event.currentTarget));
+      document.getElementById("bug-btn").addEventListener("click", (event) => runSensei("bug", event.currentTarget));
+      document.getElementById("review-btn").addEventListener("click", (event) => runSensei("review", event.currentTarget));
     </script>
   </body>
 </html>
